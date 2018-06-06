@@ -1,0 +1,30 @@
+---
+title: "Bayesian analysis of Neuroimaging data with R"
+author: "Chris Hammill<br>Jason Lerch"
+date: "2018-06-14"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+
+
+# Outline
+
+1. Meet Reverend Thomas
+1. A simple model
+1. Diagnostics
+1. A hierarchical model (Rylan's?)
+1. ABIDE (or ADNI volumetric data)
+1. ... 
+1. Profit?
+
+
+
