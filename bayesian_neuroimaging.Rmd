@@ -326,6 +326,10 @@ print(hpc, AD=function(x)
 
 ---
 
+## Time for Bayesianism!
+
+---
+
 # Why Bayesian Statistics?
 
 Have you ever...
