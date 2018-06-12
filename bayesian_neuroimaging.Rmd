@@ -315,7 +315,6 @@ hpc$Do(function(x){
     select(term, estimate, statistic, p.value)
 })
 ```
-
 ---
 
 # Statistics on the tree
@@ -353,4 +352,248 @@ ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %>%
   treemap(index=c("tissue", "struct"), vSize="meanVolume", 
     vColor="ad", type="value")
 ```
+
+
+# Why Bayesian Statistics?
+
+Have you ever...
+
+1. Been confused about what a p-value means?
+1. Been frustrated that a difference in significance doesn't mean a significant difference?
+1. Known some values for a parameter are impossible but been unable to use that to your advantage?
+1. Wanted to ask more interesting questions than whether or not a parameter is or isn't zero?
+
+---
+
+# Why Bayesian Statistics?
+
+Have you ever...
+
+1. Been confused about what a p-value means?
+1. Been frustrated that a difference in significance doesn't mean a significant difference?
+1. Known some values for a parameter are impossible but been unable to use that to your advantage?
+1. Wanted to ask more interesting questions than whether or not a parameter is or isn't zero?
+
+Then Bayesian statistics might be right for you
+
+---
+
+## How you ask?
+
+1. De-emphasis on binary descision. Bayesians avoid null hypothesis tests, instead focusing on
+estimating their parameters of interest, and reporting their uncertainty.
+1. Bayesian analyses produce a distribution of possible parameter values (the posterior), that
+can be used to ask many interesting questions about values. E.g. what is the probability the
+effect in the hippocampus is larger than the effect in the anterior cingulate cortex.
+1. Bayesian analyses can use prior information. Bayesian analysis requires an *a priori* assessment
+of how likely certain parameters are. This can be vague (uninformative) or can precise (informative)
+and steer your analysis away from nonsensical results.
+
+---
+
+class: center
+# Meet The Reverend
+
+Reverend Thomas Bayes
+
+
+![](Thomas_Bayes.gif)
+
+
+---
+class: middle
+
+## Bayes' Theorem
+
+- Bayes noticed this useful property for the probabilities for two events "A" and "B"
+
+$$ \color{red}{P(A | B)} = \frac{{\color{blue}{P(B | A)}\color{orange}{P(A)}}}{\color{magenta}{P(B)}} $$
+- $\color{red}{P(A|B)}$: The probability of A given that B happened
+- $\color{blue}{P(B|A)}$: The probability of B given that A happened
+- $\color{orange}{P(A)}$: The probability of A
+- $\color{magenta}{P(B)}$: the probability of B
+
+- Bayes did this in the context of the binomial distribution
+
+---
+class: middle
+# But Who's that behind him!
+
+---
+class: center
+
+# It's Pierre-Simon Laplace
+
+![](Pierre-Simon-Laplace.jpg)
+
+---
+
+## Bayesian Statistics
+
+- Laplace generalized Bayes Theorem into it's modern form. While working on sex-ratios in French births.
+- Start with some parameters $\theta$
+- Collect some data $D$
+- And deduce the probability of your parameters 
+
+---
+
+class: middle
+
+# Bayes' Theorem Redux
+
+$$ \color{red}{P(\theta | D)} = \frac{{\color{blue}{P(D | \theta)}\color{orange}{P(\theta)}}}{\color{magenta}{\int P(D | \theta)P(\theta)d\theta}} $$
+
+**Posterior**: $\color{red}{P(\theta|D)}$: 
+
+the probability of our parameters given our data
+
+**Likelihood**: $\color{blue}{P(D|\theta)}$
+
+The probability of our data given our parameters
+
+**Prior**: $\color{orange}{P(\theta)}$
+
+The probability of our parameters before we saw the data 
+
+**Normalizing Constant**: $\color{magenta}{\int P(D | \theta)P(\theta)d\theta}$
+
+The probability of the data averaged over all possible parameter sets
+
+
+---
+
+class: middle
+
+# Bayes' Theorem Redux
+
+$$ \color{red}{P(\theta | D)} \propto \color{blue}{P(D | \theta)}\color{orange}{P(\theta)}$$
+
+**Posterior**: $\color{red}{P(\theta|D)}$: 
+
+the probability of our parameters given our data
+
+**Likelihood**: $\color{blue}{P(D|\theta)}$
+
+The probability of our data given our parameters
+
+**Prior**: $\color{orange}{P(\theta)}$
+
+The probability of our parameters before we saw the data 
+
+---
+
+class: middle
+
+# Bayes' Theorem Redux
+
+$$ \color{red}{P(\theta | D)} \propto \color{orange}{P(\theta)}\color{blue}{P(D | \theta)}$$
+
+**Posterior**: $\color{red}{P(\theta|D)}$: 
+
+the probability of our parameters given our data
+
+**Prior**: $\color{orange}{P(\theta)}$
+
+The probability of our parameters before we saw the data 
+
+**Likelihood**: $\color{blue}{P(D|\theta)}$
+
+The probability of our data given our parameters
+
+**Pardon the re-ordering**
+
+---
+class: middle
+
+# Posterior
+
+$\color{red}{P(\theta|D)}$
+
+- The goal of bayesian statistics
+- The posterior is probability distribution over parameters.
+- Depends on the data we observed.
+- Can be used to answer interesting questions. For
+example how likely is an effect between two biologically meaninful boundaries.
+
+---
+class: middle
+
+# Prior
+
+$\color{orange}{P(\theta)}$
+
+- This is what we knew before the experiment. 
+- The prior is also a probability distribution over parameters.
+- Doesn't depend on the data we saw.
+- Gives a probability for any value the parameters could take.
+
+---
+class: middle
+
+# Likelihood
+
+$\color{blue}{P(D | \theta)}$
+
+- This is how probable our data is given a hypothetical parameter set
+- The likelihood is a probability distribution over data (not parameters)
+- Is still a function of parameters.
+
+---
+
+# In words
+
+The <font color="red">probability of parameters given our data</font> is proportional to <font color="orange">how probable we
+thought they were before</font> adjusted by <font color="blue">how well they agree with the data we saw</font>.
+
+![](posterior.gif)
+
+---
+
+# Many Slides of interest
+
+---
+
+# Installing RMINC
+
+- RMINC provides many convenience functions for working with hierarchically structured volume data. 
+- The lead developers are responsive on github and willing to offer help if needed.
+- Full install guide can be found at https://github.com/Mouse-Imaging-Centre/RMINC/blob/master/INSTALL
+
+---
+
+#Linux install:
+
+1. Get the minc-toolkit-v2 (https://bic-mni.github.io/)
+1. Source the configure script `source /opt/minc/1.9.16/minc-toolkit-config.sh` or where-ever your minc-toolkit version was installed
+1. Set your `MINC_PATH` environment variable `export MINC_PATH=/opt/minc/1.9.16/`
+1. Open an R session
+1. Install `devtools` if you have not already `install.packages("devtools")`
+1. Install `RMINC` with 
+```{r, eval = FALSE}
+devtools::install_github("Mouse-Imaging-Centre/RMINC", 
+  dependencies = c("Depends", "Imports", "LinkingTo",
+                   "Suggests","Enhances"))
+
+#Mac Install
+
+Mac install is very similar, however fortran libraries are necessary, and so you will likely need the
+package manager [brew](https://brew.sh/). From there you will need to run `brew install gcc`
+
+Then find a directory that looks like:
+
+```{r, engine = "bash", eval = FALSE}
+/usr/local/Cellar/gcc/7.*.*/lib/gcc/7
+```
+
+this needs to be added to your R build variables (makevars)
+
+```{r, eval = FALSE, engine = "bash"}
+mkdir $HOME/.R/ ## Ignore error here
+touch $HOME/.R/Makevars
+echo 'FLIBS=-L/usr/local/Cellar/gcc/7.1.0/lib/gcc/7' >> \
+  $HOME/.R/Makevars
+```
+
+If this succeeds, go ahead and follow the linux instructions.
+
 
