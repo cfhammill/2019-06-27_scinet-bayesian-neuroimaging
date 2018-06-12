@@ -26,5 +26,16 @@ options(htmltools.dir.version = FALSE)
 1. ... 
 1. Profit?
 
+---
 
+# The dataset
 
+Describe the example we will be working with
+
+---
+
+# MAGeT
+
+![MAGeT figure](MAGeT-fig.png)
+
+Chakravarty MM, Steadman P, van Eede MC, Calcott RD, Gu V, Shaw P, Raznahan A, Collins DL, Lerch JP. Performing label-fusion-based segmentation using multiple automatically generated templates. Hum Brain Mapp. 2013 Oct;34(10):2635–54.
