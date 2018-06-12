@@ -13,6 +13,8 @@ output:
 
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE)
+library(knitr)
+#opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 ```
 
 
@@ -50,8 +52,96 @@ Describe atlas here
 
 ---
 
+# Load the data
+
+Read in the processed files
+
+```{r}
+suppressMessages(library(tidyverse))
+adni <- read.csv("ADNI2_BL_MAGeT_Hippocampus_subfields.csv")
+names(adni)
+```
+
+---
+
+# Data organization
+
+Make the dataframe long rather than wide
+
+```{r}
+adniLong <- adni %>% 
+  select(-X) %>% 
+    gather(structure, volume, L_CA1:R_Mam)
+adniLong %>% 
+  select(PTID, DX_bl, structure, volume) %>% sample_n(5)
+```
+
+---
+#Reorganize the diagnosis label
+
+```{r}
+library(forcats)
+adniLong <- adniLong %>% 
+  mutate(DX_bl=fct_relevel(DX_bl, 
+                           "CN", "SMC", "EMCI", "LMCI", "AD"))
+```
+
+---
+
+# A quick look at the data
+
+```{r, fig.height=6}
+library(ggplot2)
+ggplot(adniLong) + aes(x=DX_bl, y=AGE) + geom_boxplot()
+```
+
+---
+
+# A quick look at hippocampal volume
+
+```{r, tidy=FALSE, fig.height=5}
+adniLong %>% group_by(PTID) %>% 
+  summarize(DX=DX_bl[1], GENDER=PTGENDER[1], HPC=sum(volume)) %>%
+  ggplot() + aes(DX, HPC, colour=GENDER) + geom_boxplot()
+```
+
+---
+
 # Classic Statistics
 
 1. Decide on model
 1. Apply model to every ROI/voxel separately
 1. Widen confidence intervals to account for multiple comparisons
+
+---
+
+# map for looping over structures
+
+```{r}
+library(broom)
+adniLong %>%
+  split(.$structure) %>%
+  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
+  map_dfr(tidy, .id='roi') %>% head(14)
+```
+
+---
+
+# better overview
+
+```{r}
+rTable <- adniLong %>%
+  split(.$structure) %>%
+  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
+  map_dfr(tidy, .id='roi') %>% 
+  filter(startsWith(term, "DX")) %>%
+  select(roi, term, statistic) %>%
+  spread(term, statistic) 
+```
+
+---
+# better overview
+```{r}
+rTable
+```
+
