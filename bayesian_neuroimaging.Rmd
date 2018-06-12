@@ -18,11 +18,13 @@ options(htmltools.dir.version = FALSE)
 
 # Outline
 
+1. Quick overview of algorithms and datasets used today
+1. Anatomy and hierarchies
+1. Massively univariate classical statistics
 1. Meet Reverend Thomas
 1. A simple model
 1. Diagnostics
-1. A hierarchical model (Rylan's?)
-1. ABIDE (or ADNI volumetric data)
+1. A more complex example (if we have time)
 1. ... 
 1. Profit?
 
@@ -34,8 +36,22 @@ Describe the example we will be working with
 
 ---
 
-# MAGeT
+# MAGeT - the algorithm
 
 ![MAGeT figure](MAGeT-fig.png)
 
 Chakravarty MM, Steadman P, van Eede MC, Calcott RD, Gu V, Shaw P, Raznahan A, Collins DL, Lerch JP. Performing label-fusion-based segmentation using multiple automatically generated templates. Hum Brain Mapp. 2013 Oct;34(10):2635–54.
+
+---
+
+# MAGeT - the atlas
+
+Describe atlas here
+
+---
+
+# Classic Statistics
+
+1. Decide on model
+1. Apply model to every ROI/voxel separately
+1. Widen confidence intervals to account for multiple comparisons
