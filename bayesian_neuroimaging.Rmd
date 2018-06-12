@@ -365,10 +365,40 @@ print(hpc, AD=function(x)
 
 ---
 
-## Time for Bayesianism!
+# Statistics on the tree
+
+```{r}
+print(hpc, AD=function(x) 
+  x$stats %>% filter(term=="DX_blAD") %>% select(statistic),
+  filterFun=isNotLeaf )
+```
+
 
 ---
 
+# Statistics on the tree
+
+```{r, fig.height=3}
+hpc$Do(function(x){
+  x$ad <- -log10(x$stats %>% filter(term=="DX_blAD") %>% select(p.value))
+})
+
+ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %>% 
+  mutate(path=strsplit(pathString, "/"), 
+         struct=map_chr(path, ~ .x[3]), 
+         tissue=map_chr(path, ~ .x[2])) %>% 
+  select(struct, tissue, name, meanVolume, ad) %>% 
+  treemap(index=c("tissue", "struct"), vSize="meanVolume", 
+    vColor="ad", type="value")
+```
+
+
+---
+class: center
+
+# And now for Bayesianism!
+
+---
 # Why Bayesian Statistics?
 
 Have you ever...
@@ -389,7 +419,7 @@ Have you ever...
 1. Known some values for a parameter are impossible but been unable to use that to your advantage?
 1. Wanted to ask more interesting questions than whether or not a parameter is or isn't zero?
 
-Then Bayesian statistics might be right for you
+Then Bayesian statistics might be right for you!
 
 ---
 
@@ -610,4 +640,5 @@ echo 'FLIBS=-L/usr/local/Cellar/gcc/7.1.0/lib/gcc/7' >> \
 ```
 
 If this succeeds, go ahead and follow the linux instructions.
+
 
