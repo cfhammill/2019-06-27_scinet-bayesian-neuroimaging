@@ -325,3 +325,32 @@ print(hpc, AD=function(x)
   x$stats %>% filter(term=="DX_blAD") %>% select(statistic) )
 ```
 
+---
+
+# Statistics on the tree
+
+```{r}
+print(hpc, AD=function(x) 
+  x$stats %>% filter(term=="DX_blAD") %>% select(statistic),
+  filterFun=isNotLeaf )
+```
+
+
+---
+
+# Statistics on the tree
+
+```{r, fig.height=3}
+hpc$Do(function(x){
+  x$ad <- -log10(x$stats %>% filter(term=="DX_blAD") %>% select(p.value))
+})
+
+ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %>% 
+  mutate(path=strsplit(pathString, "/"), 
+         struct=map_chr(path, ~ .x[3]), 
+         tissue=map_chr(path, ~ .x[2])) %>% 
+  select(struct, tissue, name, meanVolume, ad) %>% 
+  treemap(index=c("tissue", "struct"), vSize="meanVolume", 
+    vColor="ad", type="value")
+```
+
