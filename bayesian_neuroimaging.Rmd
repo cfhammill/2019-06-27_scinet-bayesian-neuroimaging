@@ -62,6 +62,17 @@ adni <- read.csv("ADNI2_BL_MAGeT_Hippocampus_subfields.csv")
 names(adni)
 ```
 
+
+---
+#Reorganize the diagnosis label
+
+```{r}
+library(forcats)
+adni <- adni %>% 
+  mutate(DX_bl=fct_relevel(DX_bl, 
+                           "CN", "SMC", "EMCI", "LMCI", "AD"))
+```
+
 ---
 
 # Data organization
@@ -76,15 +87,6 @@ adniLong %>%
   select(PTID, DX_bl, structure, volume) %>% sample_n(5)
 ```
 
----
-#Reorganize the diagnosis label
-
-```{r}
-library(forcats)
-adniLong <- adniLong %>% 
-  mutate(DX_bl=fct_relevel(DX_bl, 
-                           "CN", "SMC", "EMCI", "LMCI", "AD"))
-```
 
 ---
 
@@ -145,6 +147,182 @@ rTable <- adniLong %>%
 rTable
 ```
 
+---
+# better overview
+```{r}
+DT::datatable(rTable %>% remove_rownames() %>% 
+  column_to_rownames("roi") %>% round(2), options=list(pageLength=7))
+```
+
+---
+
+# multiple comparisons - omnibus FDR
+
+```{r}
+pTable <- adniLong %>%
+  split(.$structure) %>%
+  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
+  map_dfr(tidy, .id='roi') %>% 
+  filter(startsWith(term, "DX")) %>%
+  select(roi, term, p.value) %>%
+  spread(term, p.value) %>%
+  remove_rownames() %>%
+  column_to_rownames("roi") %>%
+  as.matrix()
+qTable <- pTable
+qTable[,] <- p.adjust(pTable, 'fdr')
+```
+
+---
+
+# multiple comparisons - omnibus FDR
+
+```{r}
+qTable
+```
+
+---
+
+# Hippocampal anatomical hierarchy
+
+Setting up a simple hierarchy, dividing the hippocampus in grey matter and tracts.
+
+1. Hippocampal Formation
+    1. Grey Matter
+        1. CA1
+        1. CA2/CA3
+        1. CA4/DG
+        1. subiculum
+        1. stratum
+        1. Mammilary bodies
+    1. White Matter
+        1. Alveus
+        1. Fimbria
+        1. Fornix
+
+---
+
+# Hippocampal anatomical hierarchy
+
+```{r}
+library(data.tree)
+hpc <- Node$new("HPC")
+gm <- hpc$AddChild("GM")
+ca1 <- gm$AddChild("CA1")
+lca1 <- ca1$AddChild("left CA1")
+lca1$volumes <- adni$L_CA1
+rca1 <- ca1$AddChild("right CA1")
+rca1$volumes <- adni$R_CA1
+ca23 <- gm$AddChild("CA2CA3")
+lca23 <- ca23$AddChild("left CA2CA3")
+lca23$volumes <- adni$L_CA2CA3
+rca23 <- ca23$AddChild("right CA2CA3")
+rca23$volumes <- adni$R_CA2CA3
+ca4 <- gm$AddChild("CA4DG")
+lca4 <- ca4$AddChild("left CA4DG")
+lca4$volumes <- adni$L_CA4DG
+rca4 <- ca4$AddChild("right CA4DG")
+rca4$volumes <- adni$R_CA4DG
+subiculum <- gm$AddChild("subiculum")
+lsubiculum <- subiculum$AddChild("left subiculum")
+lsubiculum$volumes <- adni$L_subiculum
+rsubiculum <- subiculum$AddChild("right subiculum")
+rsubiculum$volumes <- adni$R_subiculum
+stratum <- gm$AddChild("stratum")
+lstratum <- stratum$AddChild("left stratum")
+lstratum$volumes <- adni$L_stratum
+rstratum <- stratum$AddChild("right stratum")
+rstratum$volumes <- adni$R_stratum
+mam <- gm$AddChild("Mammillary bodies")
+lmam <- mam$AddChild("left Mammillary bodies")
+lmam$volumes <- adni$L_Mam
+rmam <- mam$AddChild("right Mammillary bodies")
+rmam$volumes <- adni$R_Mam
+wm <- hpc$AddChild("WM")
+alveus <- wm$AddChild("Alveus")
+lalveus <- alveus$AddChild("left Alveus")
+lalveus$volumes <- adni$L_Alv
+ralveus <- alveus$AddChild("right Alveus")
+ralveus$volumes <- adni$R_Alv
+fimbria <- wm$AddChild("Fimbria")
+lfimbria <- fimbria$AddChild("left Fimbria")
+lfimbria$volumes <- adni$L_Fimb
+rfimbria <- fimbria$AddChild("right Fimbria")
+rfimbria$volumes <- adni$R_Fimb
+fornix <- wm$AddChild("Fornix")
+lfornix <- fornix$AddChild("left Fornix")
+lfornix$volumes <- adni$L_Fornix
+rfornix <- fornix$AddChild("right Fornix")
+rfornix$volumes <- adni$R_Fornix
+```
+
+---
+
+# Hippocampal anatomical hierarchy
+
+```{r}
+hpc
+```
+
+---
+
+# Hippocampal anatomical hierarchy
+
+```{r, fig.height=6}
+SetGraphStyle(hpc, rankdir="LR")
+plot(hpc)
+```
+
+---
+# Aggregate up the tree
+
+```{r}
+hpc$Do(function(x){
+  x$volumes <- Aggregate(x, "volumes", rowSums)
+}, traversal="post-order", filterFun=isNotLeaf)
+
+hpc$Do(function(x) {
+  x$meanVolume <- mean(x$volumes)
+})
+```
+
+
+---
+
+# Tree graph
+
+```{r, fig.height=4}
+library(treemap)
+ToDataFrameTable(hpc, "pathString", "meanVolume", "name") %>% 
+  mutate(path=strsplit(pathString, "/"), 
+         struct=map_chr(path, ~ .x[3]), 
+         tissue=map_chr(path, ~ .x[2])) %>% 
+  select(struct, tissue, name, meanVolume) %>% 
+  treemap(index=c("tissue", "struct"), vSize="meanVolume")
+```
+
+
+---
+# Statistics on the tree
+
+```{r}
+hpc$Do(function(x){
+  adni$volumes <- x$volumes
+  x$stats <- 
+    lm(volumes ~ AGE+PTGENDER+DX_bl, adni) %>%
+    tidy() %>%
+    filter(startsWith(term, "DX")) %>%
+    select(term, estimate, statistic, p.value)
+})
+```
+---
+
+# Statistics on the tree
+
+```{r}
+print(hpc, AD=function(x) 
+  x$stats %>% filter(term=="DX_blAD") %>% select(statistic) )
+```
 
 ---
 
@@ -367,9 +545,6 @@ thought they were before</font> adjusted by <font color="blue">how well they agr
 devtools::install_github("Mouse-Imaging-Centre/RMINC", 
   dependencies = c("Depends", "Imports", "LinkingTo",
                    "Suggests","Enhances"))
-```
-
----
 
 #Mac Install
 
