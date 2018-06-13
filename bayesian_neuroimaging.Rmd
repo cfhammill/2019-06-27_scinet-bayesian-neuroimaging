@@ -61,13 +61,13 @@ opts_chunk$set(dpi=200, fig.height=5.5, fig.width=10)
 git clone https://github.com/Mouse-Imaging-Centre/Scinet-SS-bayesian-neuroimaging-R
 cd Scinet-SS-bayesian-neuroimaging-R
 
-## cp in some extra files
+## cp in some extra files <use scp if you're working on your own laptop>
 cp /bb/scinet/course/ss2018/3_bm/7_mrir/ADNI2_BL_MAGeT_Hippocampus_subfields.csv .
 cp /bb/scinet/course/ss2018/3_bm/7_mrir/flathierarchy.Rds .
 ```
 ---
 
-# Singularity
+# Singularity set up
 
 - First ssh to niagara and set your port to forward
 
@@ -76,13 +76,21 @@ ssh -L8787:localhost:<your-port> <you>@niagara.scinet.utoronto.ca
 ssh -L<your-port>:localhost:<your-port> tds01
 ```
 
-- To use the singularity container you will need to set an environment variable with a temporary RStudio password.
+- To use the singularity container you will need to set an environment variable with a temporary RStudio password. You will also
+  need a temporary directory on SCRATCH, this assumes you don't have a directory with this name already
 
 ```{r, engine = "bash", eval = FALSE}
 export RSTUDIO_PASSWORD="dont_use_this_fake_password"
+
+mkdir $SCRATCH/tmp
+module load singularity
 ```
 
-- Then run the container
+---
+
+# Run the container
+
+- Run the container <this command will remain running>
 
 ```{r, engine = "bash", eval = FALSE}
 module load singularity/2.5.1
@@ -96,8 +104,7 @@ singularity exec \
   --www-port <your-port>
 ```
 
-Then navigate to localhost:8787 in your browser, use your scinet username and 
-`$RSTUDIO_PASSWORD$` 
+- Then navigate to localhost:8787 in your browser, use your scinet username and `$RSTUDIO_PASSWORD$` 
 
 ---
 
