@@ -11,6 +11,10 @@ output:
       countIncrementalSlides: false
 ---
 
+<style>
+.remark-code { font-size: 75% }
+<\style>
+
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE)
 library(knitr)
@@ -179,7 +183,7 @@ DT::datatable(rTable %>% remove_rownames() %>%
 - Two main approaches Family-Wise Error Rate (FWER) control and False-Discovery Rate (FDR) control.
 - In neuroimaging we tend to use FDR control.
 
---- 
+---
 
 # FDR
 
@@ -464,7 +468,7 @@ $$ \color{red}{P(A | B)} = \frac{{\color{blue}{P(B | A)}\color{orange}{P(A)}}}{\
 
 ---
 class: middle
-# But Who's that behind him!
+# But who's that behind him!
 
 ---
 class: center
@@ -481,6 +485,8 @@ class: center
 - Start with some parameters $\theta$
 - Collect some data $D$
 - And deduce the probability of your parameters 
+- Key difference between Bayesianism and Frequentism is that view that $\theta$ has an associated
+  probability distribution. In frequentism $\theta$ is an unknown constant.
 
 ---
 
@@ -596,15 +602,119 @@ thought they were before</font> adjusted by <font color="blue">how well they agr
 
 ---
 
-# Many Slides of interest
+# A first example
+
+- Let's revisit linear modelling but this time from a bayesian stand-point.
+
+$$ \textbf{y} = X\mathbf{\beta} + \mathbf{\epsilon} $$ 
+
+We'll make our probabilistic views explicit
+
+$$ \mathbf{\epsilon} \sim \mathfrak{N}(0, \sigma) $$
+
+$\epsilon$ is normally distributed with some unknown variance $\sigma$
 
 ---
+
+# Frequentist interpretation
+
+- In frequentism $\mathbf{\beta}$ is some fixed value.
+- We can estimate standard errors for $\beta$ and get p-values
+  (likelihoods) that each component of $\mathbf{\beta}$ is zero.
+  
+# Bayesian interpretation
+
+- In bayesianism $\mathbf{\beta}$ is a random variable that we're trying
+  to learn about.
+- In order to do this we have specify our prior belief about $\mathbf{\beta}$
+- If we say we know nothing about $\mathbf{\beta}$, we get identical estimates
+  to frequentism
+
+
+---
+
+# Simulate some data
+
+```{r, fig.height = 4}
+set.seed(20180613)
+age <- rnorm(100)
+brain_volume <- 3 * age + rnorm(100)
+plot(age, brain_volume)
+```
+
+---
+
+# Fit a bayesian linear model
+
+- For this we'll use the package `rstanarm`
+
+```{r}
+suppressMessages(library(rstanarm))
+ex <- data.frame(brain_volume = brain_volume, age = age)
+blm <- stan_glm(brain_volume ~ age, data = ex,
+                prior = normal(0, 5))
+```
+
+---
+
+# How'd we do
+
+```{r}
+blm
+```
+
+---
+
+# How does `lm` do?
+
+```{r}
+lmod <- lm(brain_volume ~ age, data = ex)
+summary(lmod)
+```
+
+---
+
+# Side-By-Side
+
+```{r}
+coef(blm)
+coef(lmod)
+```
+
+---
+
+# Let's look at the posterior
+
+```{r, fig.height = 4}
+suppressPackageStartupMessages(library(bayesplot))
+mcmc_areas(as.matrix(blm), pars = "age")
+```
+
+---
+
+# What's happening here?
+
+- `rstanarm` is creating a posterior for us, but how?
+- in most bayesian textbooks this is shown first analytically for simple models.
+  *this is not what stan does*
+- Stan *approximates* the posterior using samples
+- Samples are generated with markov-chain monte carlo (MCMC)
+
+---
+
+# The posterior revisited
+
+```{r}
+blm_post <- as.matrix(blm)
+
+str(blm_post[,"age"])
+summary(blm_post[,"age"])
+```
 
 ---
 # Data preparation
 
 ```{r}
-suppressMessages(library(rstanarm))
 hpc$Do(function(x){
   x$normVolumes <- scale(x$volumes)
 })
@@ -647,7 +757,6 @@ summary(flathierarchy, digits=3)
 # Quick diagnostics: Rhat
 
 ```{r, fig.height=4}
-suppressPackageStartupMessages(library(bayesplot))
 mcmc_rhat_hist(rhat(flathierarchy))
 ```
 
