@@ -14,6 +14,7 @@ output:
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE)
 library(knitr)
+opts_chunk$set(dpi=200, fig.height=6, fig.width=10)
 #opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 ```
 
@@ -306,7 +307,7 @@ hpc
 
 # Hippocampal anatomical hierarchy
 
-```{r, fig.height=6}
+```{r, fig.height=6, dpi=72}
 SetGraphStyle(hpc, rankdir="LR")
 plot(hpc)
 ```
@@ -368,7 +369,8 @@ print(hpc, AD=function(x)
 
 ```{r}
 print(hpc, AD=function(x) 
-  x$stats %>% filter(term=="DX_blAD") %>% select(statistic),
+  x$stats %>% filter(term=="DX_blAD") %>% 
+    select(statistic),
   filterFun=isNotLeaf )
 ```
 
@@ -379,7 +381,8 @@ print(hpc, AD=function(x)
 
 ```{r, fig.height=3}
 hpc$Do(function(x){
-  x$ad <- -log10(x$stats %>% filter(term=="DX_blAD") %>% select(p.value))
+  x$ad <- -log10(x$stats %>% filter(term=="DX_blAD") %>% 
+                   select(p.value))
 })
 
 ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %>% 
@@ -749,7 +752,7 @@ colnames(probcomps) <- pnames
 
 ```{r, fig.height=5.5}
 library(pheatmap)
-pheatmap(probcomps)
+pheatmap(probcomps, display_numbers=T)
 ```
 
 ---
