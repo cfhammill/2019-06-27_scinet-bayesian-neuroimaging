@@ -712,6 +712,10 @@ summary(blm_post[,"age"])
 ```
 
 ---
+
+# A more involved example
+
+---
 # Data preparation
 
 ```{r}
