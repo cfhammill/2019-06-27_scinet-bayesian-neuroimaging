@@ -85,10 +85,11 @@ export RSTUDIO_PASSWORD="dont_use_this_fake_password"
 - Then run the container
 
 ```{r, engine = "bash", eval = FALSE}
+module load singularity/2.5.1
 singularity exec \
   --bind /bb/scinet/course/ss2018/3_bm/7_mrir/rstudio_auth.sh:/usr/lib/rstudio-server/bin/rstudio_auth.sh \
   --bind $SCRATCH/tmp:/tmp \
-  /bb/scinet/course/ss2018/3_bm/7_mrir/RMINC-develop-2018-06-12-85c02d5c7b0c.img \
+  /bb/scinet/course/ss2018/3_bm/7_mrir/RMINC-develop-2018-06-13-6793fefb8a5a.img \
   rserver \
   --auth-none 0 \
   --auth-pam-helper-path rstudio_auth.sh \
@@ -503,14 +504,17 @@ Then Bayesian statistics might be right for you!
 
 ## How you ask?
 
-1. De-emphasis on binary descision. Bayesians avoid null hypothesis tests, instead focusing on
-estimating their parameters of interest, and reporting their uncertainty.
-1. Bayesian analyses produce a distribution of possible parameter values (the posterior), that
-can be used to ask many interesting questions about values. E.g. what is the probability the
-effect in the hippocampus is larger than the effect in the anterior cingulate cortex.
-1. Bayesian analyses can use prior information. Bayesian analysis requires an *a priori* assessment
-of how likely certain parameters are. This can be vague (uninformative) or can precise (informative)
-and steer your analysis away from nonsensical results.
+1. **De-emphasize binary descisions.**
+  Bayesians avoid null hypothesis tests, instead focusing on estimating their parameters of 
+  interest, and reporting their uncertainty.
+1. **Posterior Distributions**
+  Bayesian analyses produce a distribution of possible parameter values (the posterior), that
+  can be used to ask many interesting questions about values. E.g. what is the probability the
+  effect in the hippocampus is larger than the effect in the anterior cingulate cortex.
+1. **Prior Information**
+  Bayesian analyses can use prior information. Bayesian analysis requires an *a priori* assessment
+  of how likely certain parameters are. This can be vague (uninformative) or can precise (informative)
+  and steer your analysis away from nonsensical results.
 
 ---
 
@@ -682,7 +686,7 @@ $$ \textbf{y} = X\mathbf{\beta} + \mathbf{\epsilon} $$
 
 We'll make our probabilistic views explicit
 
-$$ \mathbf{\epsilon} \sim \mathfrak{N}(0, \sigma) $$
+$$ \mathbf{\epsilon} \sim \mathbb{N}(0, \sigma) $$
 
 $\epsilon$ is normally distributed with some unknown variance $\sigma$
 
@@ -725,7 +729,7 @@ plot(age, brain_volume)
 ```{r}
 suppressMessages(library(rstanarm))
 ex <- data.frame(brain_volume = brain_volume, age = age)
-blm <- stan_glm(brain_volume ~ age, data = ex,
+bl <- stan_glm(brain_volume ~ age, data = ex,
                 prior = normal(0, 5))
 ```
 
@@ -734,7 +738,7 @@ blm <- stan_glm(brain_volume ~ age, data = ex,
 # How'd we do
 
 ```{r}
-blm
+bl
 ```
 
 ---
@@ -751,7 +755,7 @@ summary(lmod)
 # Side-By-Side
 
 ```{r}
-coef(blm)
+coef(bl)
 coef(lmod)
 ```
 
@@ -761,7 +765,7 @@ coef(lmod)
 
 ```{r, fig.height = 4}
 suppressPackageStartupMessages(library(bayesplot))
-mcmc_areas(as.matrix(blm), pars = "age")
+mcmc_areas(as.matrix(bl), pars = "age")
 ```
 
 ---
@@ -779,15 +783,97 @@ mcmc_areas(as.matrix(blm), pars = "age")
 # The posterior revisited
 
 ```{r}
-blm_post <- as.matrix(blm)
+bl_post <- as.matrix(bl)
 
-str(blm_post[,"age"])
-summary(blm_post[,"age"])
+str(bl_post[,"age"])
+summary(bl_post[,"age"])
 ```
 
 ---
 
-# A more involved example
+# With real data now
+
+- Let's look at the effect of diagnosis on CA1 volume
+
+```{r}
+scale_vec <- function(x) (x - mean(x)) / sd(x)
+ca1_ex <-
+  adni %>%
+  mutate(volume = scale_vec(L_CA1 + R_CA1))
+```
+
+Scaling here helps improve model fitting, an allows you to interpret parameters in terms of whole sample standard deviations.
+
+---
+
+# Model
+
+$$\text{volume} = \beta_{D}D + \epsilon$$
+- We're not going to estimate an intercept for this model, fitting instead the mean volume for each diagnosis
+- in a R formula it will look like
+
+`volume ~ -1 + DX_bl`
+
+- The -1 removes the intercept
+
+---
+
+#Fit
+
+```{r}
+invisible(
+  capture.output({
+    ca1_mod <- stan_glm(volume ~ -1 + DX_bl, data = ca1_ex)
+  }))
+
+ca1_mod
+```
+
+---
+
+So we see that the effect of each diagnosis has on CA1 volume. Let's visualize the posterior for these effects
+
+```{r, fig.height = 5}
+mcmc_areas(as.matrix(ca1_mod), regex_pars = "DX.*")
+```
+
+---
+
+```{r}
+table(ca1_ex$DX_bl)
+```
+
+So we can see some signs that the posterior width is driven in part by sample size, nice.
+
+---
+
+# Posterior Magic
+
+First let's extract the posterior
+
+```{r}
+ca1_post <- as.matrix(ca1_mod)
+```
+
+What do we think the probability is that AD patients have smaller CA1s than controls? Easy to answer with the posterior!
+
+```{r}
+mean(ca1_post[,"DX_blCN"] > ca1_post[,"DX_blAD"])
+```
+
+So we're pretty sure about this. 
+
+---
+
+# But how big is the difference?
+
+```{r, fig.height = 4}
+mcmc_areas(ca1_post[,"DX_blCN", drop = FALSE] - ca1_post[,"DX_blAD"])
+```
+
+---
+
+# Looking at many structures
 
 ---
 # Data preparation
