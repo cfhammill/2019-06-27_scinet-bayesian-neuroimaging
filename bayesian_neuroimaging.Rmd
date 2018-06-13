@@ -14,7 +14,7 @@ output:
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE)
 library(knitr)
-opts_chunk$set(dpi=200, fig.height=6, fig.width=10)
+opts_chunk$set(dpi=200, fig.height=5.5, fig.width=10)
 #opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 ```
 
@@ -102,7 +102,7 @@ adniLong %>%
 
 # A quick look at the data
 
-```{r, fig.height=6}
+```{r, fig.height=5.5}
 library(ggplot2)
 ggplot(adniLong) + aes(x=DX_bl, y=AGE) + geom_boxplot()
 ```
@@ -188,7 +188,7 @@ DT::datatable(rTable %>% remove_rownames() %>%
 - Two main approaches Family-Wise Error Rate (FWER) control and False-Discovery Rate (FDR) control.
 - In neuroimaging we tend to use FDR control.
 
---- 
+---
 
 # FDR
 
@@ -609,7 +609,6 @@ thought they were before</font> adjusted by <font color="blue">how well they agr
 
 ---
 
----
 # Data preparation
 
 ```{r}
@@ -633,9 +632,10 @@ adniLongNorm <- adni %>%
 ---
 # The model
 
-```{r, tidy=TRUE, tidy.opts=list(width.cutoff=60), eval=FALSE}
+```{r, eval=FALSE}
 flathierarchy <- stan_lmer(
-  volume ~ AGE+PTGENDER+DX_bl + (1|PTID) + (AGE+PTGENDER+DX_bl|structure), 
+  volume ~ AGE+PTGENDER+DX_bl + (1|PTID) + 
+           (AGE+PTGENDER+DX_bl|structure), 
   adniLongNorm , chains=3, cores=3, adapt_delta = 0.99)
 ```
 
@@ -644,6 +644,105 @@ The model takes a while to run, unless you specified sample_n to a relatively sm
 ```{r}
 flathierarchy <- readRDS("flathierarchy.Rds")
 ```
+
+---
+# The model
+```{r, eval=FALSE}
+flathierarchy <- stan_lmer(
+  volume ~ AGE+PTGENDER+DX_bl + (1|PTID) +
+           (AGE+PTGENDER+DX_bl|structure), 
+  adniLongNorm , chains=3, cores=3, adapt_delta = 0.99)
+```
+
+What is this model doing?
+
+* volume ~ AGE + PTGENDER + DX_bl -> the same model we saw before
+* (1|PTID) -> allow for variation across individuals; i.e. those with a larger CA1 are also likely to have a larger DG
+* (AGE+PTGENDER+DX_bl|structure) -> repeat of the model, but now grouped by structure.
+
+--
+
+Huh?
+
+--
+
+* the main effects (first part) are across all structures
+* for each structure, the deviation from the main effect is estimated
+
+---
+
+# The magic of pooling
+
+How do we work with multiple brain structures at the same time? By pooling. Here's what that could mean:
+
+--
+
+**Complete pooling:** we ignore that we have multiple structures, and sum them. I.e. a single model across overall hippocampal volume.
+
+--
+
+**No pooling:** we compute a separate model for each structure. What happens in CA1 has no bearing on what happens in CA2/CA3. This is what we do with our massively univariate models. You need to control for multiple comparisons by widening your confidence intervals.
+
+--
+
+**Partial pooling:** what happens in CA1 will _somewhat_ influence what happens in CA2/CA3, in that the model will share information across structures. These are our hierarchical Bayesian models.
+
+--
+
+Partial pooling, once more: the prior for each structure is the pooled estimated of all structures. The stronger the data for each structure (i.e. the likelihood), the less the estimate will shrink towards the pooled estimates. And the pooled estimates are themselves determined from the data.
+
+--
+
+And since all structures share information, you need not control for multiple comparisons. Shrinkage replaces widening of confidence intervals.
+
+---
+# Covariance priors
+
+So if the prior for each structure is estimated from the data, we don't need a prior? Not quite - we have to decide how pooling happens.
+
+--
+
+This is our model from before:
+
+$y = \alpha + X\beta + Zb + \epsilon$
+
+* where $X$ is the matrix of predictors for the main effect, AGE+PTGENDER+DX_bl in our model.
+* and where $Z$ is the matrix that encodes deviation in the predictors across groups, or structures in our case, which we specified as (AGE+PTGENDER+DX_bl|structure) and (1|PTID).
+
+--
+
+The likelihood is thus
+
+$y \sim \mathcal{N} (\alpha + X\beta + Zb, \sigma^2 I)$
+
+* intercept and coefficients common across structures
+* deviations in intercepts and coefficients that vary across structures
+
+---
+# Covariance priors
+
+Back to the likelihood:
+
+$y \sim \mathcal{N} (\alpha + X\beta + Zb, \sigma^2 I)$
+
+* intercept and coefficients common across structures
+* deviations in intercepts and coefficients that vary across structures
+
+--
+
+We now need priors on parameters. We maintain the simple assumption that $b \sim \mathcal{N} (0,\Sigma)$ - i.e. the deviation for each structure is centred at zero with some variance.
+
+--
+
+But now we need to state our prior beliefs about $\Sigma$ in addition to $\alpha$, $\beta$, and $\sigma$. 
+
+--
+
+Our prior for varying slopes and intercepts is a "zero-mean random vector following a multivariate Gaussian distribution with an unknown covariance matrix to be estimated"
+
+--
+
+More detail here: [http://mc-stan.org/rstanarm/articles/glmer.html]
 
 ---
 # Taking a peek
