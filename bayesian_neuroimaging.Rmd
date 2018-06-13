@@ -12,8 +12,15 @@ output:
 ---
 
 <style>
-.remark-code { font-size: 75% }
-<\style>
+.remark-code { 
+  font-size: 75%;
+}
+
+.remark-slide-scaler {
+  overflow: scroll;
+}
+</style>
+
 
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE)
@@ -41,7 +48,7 @@ opts_chunk$set(dpi=200, fig.height=6, fig.width=10)
 # Following Along
 
 - To follow along with today's session you will need to either:
-- run R with c("knitr", "tidyverse", "forcats", "ggplot2", "broom", "data.tree", "treemap", "rstanarm", "bayesplot", "pheatmap", "ggrepel") on your laptop
+- run R with `c("knitr", "tidyverse", "forcats", "ggplot2", "broom", "data.tree", "treemap", "rstanarm", "bayesplot", "pheatmap", "ggrepel")` on your laptop
 - use R from our singularity container
 
 ---
