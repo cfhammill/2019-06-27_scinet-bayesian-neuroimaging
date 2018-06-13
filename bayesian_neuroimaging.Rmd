@@ -126,7 +126,6 @@ adniLong %>%
   map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
   map_dfr(tidy, .id='roi') %>% head(14)
 ```
-
 ---
 
 # better overview
@@ -550,6 +549,163 @@ thought they were before</font> adjusted by <font color="blue">how well they agr
 ---
 
 # Many Slides of interest
+
+---
+
+---
+# Data preparation
+
+```{r}
+suppressMessages(library(rstanarm))
+hpc$Do(function(x){
+  x$normVolumes <- scale(x$volumes)
+})
+
+hpcSym <- Clone(hpc)
+Prune(hpcSym, isNotLeaf)
+data <- hpcSym$Get("normVolumes", filterFun=isLeaf)
+colnames(data) <- hpcSym$Get("name", filterFun = isLeaf)
+adniLongNorm <- adni %>% 
+  mutate(AGE=AGE/10) %>% 
+  select(PTID:DX_bl) %>% 
+  cbind(data) %>% 
+  # sample_n(100) %>% # to make it not last an ice-age
+  gather(structure, volume, CA1:Fornix) 
+```
+
+---
+# The model
+
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=60), eval=FALSE}
+flathierarchy <- stan_lmer(
+  volume ~ AGE+PTGENDER+DX_bl + (1|PTID) + (AGE+PTGENDER+DX_bl|structure), 
+  adniLongNorm , chains=3, cores=3, adapt_delta = 0.99)
+```
+
+The model takes a while to run, unless you specified sample_n to a relatively small number. So just load the output from an earlier, saved run instead.
+
+```{r}
+flathierarchy <- readRDS("flathierarchy.Rds")
+```
+
+---
+# Taking a peek
+
+```{r}
+summary(flathierarchy, digits=3)
+```
+
+---
+# Quick diagnostics: Rhat
+
+```{r, fig.height=4}
+suppressPackageStartupMessages(library(bayesplot))
+mcmc_rhat_hist(rhat(flathierarchy))
+```
+
+---
+# More diagnostics: trace plots
+
+We'll need data in matrix form for this and many future ops
+```{r}
+flathierarchym <- as.matrix(flathierarchy)
+```
+
+```{r, fig.height=5}
+mcmc_trace(flathierarchym[,1:7])
+```
+
+---
+# The main effects
+
+```{r}
+mcmc_intervals(flathierarchym[,1:7])
+```
+
+---
+# Effect across structures
+```{r, fig.height=6}
+mcmc_intervals(flathierarchym, 
+  pars="DX_blAD", regex_pars = 'DX_blAD structure')
+```
+
+---
+# Effect across structures
+```{r, fig.height=6}
+mcmc_areas_ridges(flathierarchym, 
+  pars="DX_blAD", regex_pars = 'DX_blAD structure')
+```
+
+---
+# Summed effects
+
+```{r, fig.height=5.5, fig.width=10}
+vars <- colnames(flathierarchym)
+ADsamples <- flathierarchym[,grep('DX_blAD structure', vars)]
+mcmc_areas_ridges(ADsamples + flathierarchym[,"DX_blAD"])
+```
+
+---
+# Probability calculations
+
+What is the probability that CA1 was more affected than CA2/CA3 in AD?
+
+```{r}
+mean(flathierarchym[,'b[DX_blAD structure:CA1]'] < 
+       flathierarchym[,'b[DX_blAD structure:CA2CA3]'])
+```
+
+Not very likely
+
+```{r}
+quantile(flathierarchym[,'b[DX_blAD structure:CA1]'] - 
+       flathierarchym[,'b[DX_blAD structure:CA2CA3]'])
+```
+
+---
+# Probability calculations
+What is the probability that the subiculum was more affected than CA1 in AD?
+
+```{r}
+mean(flathierarchym[,'b[DX_blAD structure:subiculum]'] < 
+       flathierarchym[,'b[DX_blAD structure:CA1]'])
+```
+
+Almost certainly
+
+```{r}
+quantile(flathierarchym[,'b[DX_blAD structure:subiculum]'] - 
+       flathierarchym[,'b[DX_blAD structure:CA1]'])
+```
+
+---
+# All pairs of probabilities
+
+```{r}
+ADvars <- grep("DX_blAD structure", vars)
+probcomps <- matrix(nrow=length(ADvars), ncol=length(ADvars))
+for (i in 1:length(ADvars)) {
+  for (j in 1:length(ADvars)) {
+    probcomps[i,j] <- mean(flathierarchym[,ADvars[i]] < 
+                             flathierarchym[,ADvars[j]])
+  }
+}
+```
+
+```{r}
+pnames <- sub('.+structure:(.+)\\]', '\\1', 
+              colnames(flathierarchym[,ADvars]))
+rownames(probcomps) <- pnames
+colnames(probcomps) <- pnames
+```
+
+---
+# All pairs of probabilities
+
+```{r, fig.height=5.5}
+library(pheatmap)
+pheatmap(probcomps)
+```
 
 ---
 
