@@ -663,20 +663,20 @@ mcmc_trace(flathierarchym[,1:7])
 ---
 # The main effects
 
-```{r}
+```{r, fig.height=6, fig.width=10}
 mcmc_intervals(flathierarchym[,1:7])
 ```
 
 ---
 # Effect across structures
-```{r, fig.height=6}
+```{r, fig.height=6, fig.width=10}
 mcmc_intervals(flathierarchym, 
   pars="DX_blAD", regex_pars = 'DX_blAD structure')
 ```
 
 ---
 # Effect across structures
-```{r, fig.height=6}
+```{r, fig.height=6, fig.width=10}
 mcmc_areas_ridges(flathierarchym, 
   pars="DX_blAD", regex_pars = 'DX_blAD structure')
 ```
