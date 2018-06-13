@@ -33,9 +33,11 @@ opts_chunk$set(dpi=200, fig.height=6, fig.width=10)
 
 ---
 
-# The dataset
+# The dataset: ADNI
 
-Describe the example we will be working with
+* baseline scans from ADNI2
+* multi-site initiative to study Alzheimer's and Mild Cognitive Impairment
+
 
 ---
 
@@ -49,7 +51,14 @@ Chakravarty MM, Steadman P, van Eede MC, Calcott RD, Gu V, Shaw P, Raznahan A, C
 
 # MAGeT - the atlas
 
-Describe atlas here
+
+```{r, echo=F, out.height="400px"}
+knitr::include_graphics("hippoatlas.png")
+```
+
+Pipitone J, Park MTM, Winterburn J, Lett TA, Lerch JP, Pruessner JC, Lepage M, Voineskos AN, Chakravarty MM, Alzheimer’s Disease Neuroimaging Initiative. Multi-atlas segmentation of the whole hippocampus and subfields using multiple automatically generated templates. Neuroimage. 2014 Nov 1;101:494–512.
+
+Winterburn JL, Pruessner JC, Chavez S, Schira MM, Lobaugh NJ, Voineskos AN, Chakravarty MM. A novel in vivo atlas of human hippocampal subfields using high-resolution 3 T magnetic resonance imaging. Neuroimage. 2013 Jul 1;74:254–65.
 
 ---
 
