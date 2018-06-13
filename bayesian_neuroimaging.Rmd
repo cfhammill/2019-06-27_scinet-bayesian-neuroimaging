@@ -30,10 +30,66 @@ opts_chunk$set(dpi=200, fig.height=6, fig.width=10)
 1. Massively univariate classical statistics
 1. Meet Reverend Thomas
 1. A simple model
+1. A more involved model
 1. Diagnostics
-1. A more complex example (if we have time)
+1. A complex example (if we have time)
 1. ... 
 1. Profit?
+
+---
+
+# Following Along
+
+- To follow along with today's session you will need to either:
+- run R with c("knitr", "tidyverse", "forcats", "ggplot2", "broom", "data.tree", "treemap", "rstanarm", "bayesplot", "pheatmap", "ggrepel") on your laptop
+- use R from our singularity container
+
+---
+
+# Get these slides and code
+
+- From a terminal run:
+
+```{r, engine = "bash", eval = FALSE}
+git clone https://github.com/Mouse-Imaging-Centre/Scinet-SS-bayesian-neuroimaging-R
+cd Scinet-SS-bayesian-neuroimaging-R
+
+## cp in some extra files
+cp /bb/scinet/course/ss2018/3_bm/7_mrir/ADNI2_BL_MAGeT_Hippocampus_subfields.csv .
+cp /bb/scinet/course/ss2018/3_bm/7_mrir/flathierarchy.Rds .
+```
+---
+
+# Singularity
+
+- First ssh to niagara and set your port to forward
+
+```{r, engine = "bash", eval = FALSE}
+ssh -L8787:localhost:<your-port> <you>@niagara.scinet.utoronto.ca
+ssh -L<your-port>:localhost:<your-port> tds01
+```
+
+- To use the singularity container you will need to set an environment variable with a temporary RStudio password.
+
+```{r, engine = "bash", eval = FALSE}
+export RSTUDIO_PASSWORD="dont_use_this_fake_password"
+```
+
+- Then run the container
+
+```{r, engine = "bash", eval = FALSE}
+singularity exec \
+  --bind /bb/scinet/course/ss2018/3_bm/7_mrir/rstudio_auth.sh:/usr/lib/rstudio-server/bin/rstudio_auth.sh \
+  --bind $SCRATCH/tmp:/tmp \
+  /bb/scinet/course/ss2018/3_bm/7_mrir/RMINC-develop-2018-06-12-85c02d5c7b0c.img \
+  rserver \
+  --auth-none 0 \
+  --auth-pam-helper-path rstudio_auth.sh \
+  --www-port <your-port>
+```
+
+Then navigate to localhost:8787 in your browser, use your scinet username and 
+`$RSTUDIO_PASSWORD$` 
 
 ---
 
