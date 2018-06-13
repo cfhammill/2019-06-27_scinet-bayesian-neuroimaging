@@ -155,6 +155,45 @@ DT::datatable(rTable %>% remove_rownames() %>%
 
 ---
 
+# Frequentist Statistics
+
+- In frequentism we frequently concern ourselves with null hypothesis testing
+- Null hypotheses are reference models you compare against your data.
+- If your data (and more extreme data) would be very unlikely given your null model
+  you reject the null hypothesis, and conclude that the null hypothesis is not correct.
+- Choosing a threshold for this probability (e.g. 0.05) and rejecting when the likelihood
+  is below the threshold gives you a fixed probability of making a "Type I" error, which conveniently
+  is equal to your threshold.
+- So if we reject all likelihoods (p-values) when they are below 0.05 we have a 5% chance of
+  rejecting when the null model is in fact true.
+- If this is confusing, you're not alone, this is very hard to wrap your mind around.
+
+---
+
+# Dealing with Many Tests
+
+- If you're testing a lot of hypotheses, a 5% chance of making a mistake adds up
+- After 14 tests you have a better than a 50/50 chance of having made at least one mistake
+- How do we control for this?
+- Two main approaches Family-Wise Error Rate (FWER) control and False-Discovery Rate (FDR) control.
+- In neuroimaging we tend to use FDR control.
+
+--- 
+
+# FDR
+
+- Instead of trying to control our chances of making at least one mistake, let's try to control the
+  fraction of mistakes we make.
+- If we have 100's or more tests we can accept a few mistakes in the interest of finding the
+  important results.
+- To do this we employ the Benjamini-Hochberg procedure.
+- The Benjamini-Hochberg procedure turns our p-values in q-values. Rejecting all q-values below some
+  threshold controls the expected number of mistakes.
+- For example if we reject all hypotheses with q < 0.05, we expect about 5% of our results to be
+  false discoveries (type I errors). 
+
+---
+
 # multiple comparisons - omnibus FDR
 
 ```{r}
@@ -353,6 +392,12 @@ ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %>%
 ```
 
 
+---
+class: center
+
+# And now for Bayesianism!
+
+---
 # Why Bayesian Statistics?
 
 Have you ever...
@@ -373,7 +418,7 @@ Have you ever...
 1. Known some values for a parameter are impossible but been unable to use that to your advantage?
 1. Wanted to ask more interesting questions than whether or not a parameter is or isn't zero?
 
-Then Bayesian statistics might be right for you
+Then Bayesian statistics might be right for you!
 
 ---
 
