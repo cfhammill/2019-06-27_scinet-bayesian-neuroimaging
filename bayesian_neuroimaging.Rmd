@@ -1171,6 +1171,20 @@ mcmc_intervals(structswmain, regex_pars="EMCI")
 mcmc_intervals(structswmain, regex_pars="LMCI")
 ```
 
+---
+# A reminder about LMCI FDR
+
+```{r}
+hpcSym$Do(function(x){
+  adni$volume <- x$normVolumes
+  x$stats <- tidy(lm(volume ~ AGE+PTGENDER+DX_bl, adni))
+  x$LMCI <- x$stats %>% filter(term=="DX_blLMCI") %>% select(p.value)
+})
+round(p.adjust(
+  hpcSym$Get("LMCI", filterFun = isLeaf), 'fdr'), 
+  3)
+```
+
 
 ---
 
