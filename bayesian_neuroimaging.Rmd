@@ -864,6 +864,63 @@ library(pheatmap)
 pheatmap(probcomps, display_numbers=T)
 ```
 
+
+---
+
+# Estimating shrinkage
+
+First, compute the least squares estimates
+```{r}
+lmEstimates <- adniLongNorm %>%
+  split(.$structure) %>%
+  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
+  map_dfr(tidy, .id='roi') %>%
+  filter(term == "DX_blAD") %>%
+  select(roi, estimate)
+```
+
+---
+
+# Estimating shrinkage
+
+Next, compute the medians from the Hierarchical Bayesian model
+
+```{r}
+sweptADsamples <- flathierarchym[,ADvars] + flathierarchym[,"DX_blAD"]
+lmAndBayes <- sweptADsamples %>% 
+  as_data_frame %>% 
+  gather(term, value) %>% 
+  group_by(term) %>% 
+  summarize(median=median(value)) %>% 
+  mutate(term=sub('.+structure:(.+)\\]', '\\1', term)) %>% 
+  mutate(term=sub('_', ' ', term)) %>%
+  inner_join(lmEstimates, by=c("term" = "roi")) 
+```
+
+
+---
+
+# Estimating Shrinkage
+
+```{r}
+lmAndBayes %>% mutate(diff=abs(median - estimate))
+```
+
+---
+
+# Estimating Shrinkage
+
+```{r, fig.height=4}
+library(ggrepel)
+ggplot(lmAndBayes) + 
+  aes(median, estimate) + 
+  geom_point() + 
+  geom_abline(aes(intercept=0, slope=1)) + 
+  geom_text_repel(aes(label=term)) + 
+  xlab("Hierarchical Bayesian") + 
+  ylab("Least squares")
+```
+
 ---
 
 # Installing RMINC
