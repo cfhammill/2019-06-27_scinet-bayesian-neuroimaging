@@ -1186,6 +1186,93 @@ ggplot(lmAndBayes) +
 ```
 
 ---
+# Estimating shrinkage across all terms
+
+```{r}
+structvars <- grep('b.+structure', vars, value = T)
+mainterms <- sub('b\\[(.+) str.+', '\\1', structvars)
+
+structswmain <- flathierarchym[,structvars] + flathierarchym[,mainterms]
+
+bOut <- structswmain %>% 
+  as.data.frame %>% 
+  gather(mterm, value) %>%
+  group_by(mterm) %>% 
+  summarize(median=median(value)) %>%
+  mutate(roi = sub('.+structure:(.+)\\]', '\\1', mterm),
+         roi = sub('_', ' ', roi),
+         term = sub('b\\[(.+) str.+', '\\1', mterm)) %>%
+  select(median, roi, term)
+
+
+lOut <- adniLongNorm %>%
+  split(.$structure) %>%
+  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
+  map_dfr(tidy, .id='roi') %>%
+  select(estimate, roi, term)
+
+blOut <- inner_join(bOut, lOut) 
+```
+
+---
+
+# Estimating shrinkage across all terms
+
+```{r}
+ggplot(blOut) + 
+  aes(median, estimate, colour=term) + 
+  geom_point() +
+  geom_abline(aes(intercept=0, slope=1))
+```
+
+---
+
+# Estimating shrinkage across all terms
+
+```{r, fig.height=5}
+ggplot(blOut) + 
+  aes(median, estimate, colour=roi) + 
+  geom_point() +
+  geom_abline(aes(intercept=0, slope=1)) +
+  xlab("Hierarchical bayes") +
+  ylab("Least squares") +
+  facet_wrap(~term, scales="free")
+```
+
+---
+
+# What about the MCI groups?
+
+Remember, nothing survived FDR comparisons ...
+
+```{r}
+mcmc_intervals(structswmain, regex_pars="EMCI")
+```
+
+---
+
+# And LMCI
+
+```{r}
+mcmc_intervals(structswmain, regex_pars="LMCI")
+```
+
+---
+# A reminder about LMCI FDR
+
+```{r}
+hpcSym$Do(function(x){
+  adni$volume <- x$normVolumes
+  x$stats <- tidy(lm(volume ~ AGE+PTGENDER+DX_bl, adni))
+  x$LMCI <- x$stats %>% filter(term=="DX_blLMCI") %>% select(p.value)
+})
+round(p.adjust(
+  hpcSym$Get("LMCI", filterFun = isLeaf), 'fdr'), 
+  3)
+```
+
+
+---
 
 # Installing RMINC
 
