@@ -97,6 +97,7 @@ module load singularity/2.5.1
 singularity exec \
   --bind /bb/scinet/course/ss2018/3_bm/7_mrir/rstudio_auth.sh:/usr/lib/rstudio-server/bin/rstudio_auth.sh \
   --bind $SCRATCH/tmp:/tmp \
+  --bind $SCRATCH:$SCRATCH \
   /bb/scinet/course/ss2018/3_bm/7_mrir/RMINC-develop-2018-06-13-6793fefb8a5a.img \
   rserver \
   --auth-none 0 \
@@ -106,6 +107,21 @@ singularity exec \
 
 - Then navigate to localhost:8787 in your browser, use your scinet username and `$RSTUDIO_PASSWORD$` 
 
+---
+
+# Optional step to compile the slides
+
+- You'll need the package "xaringan" to render the slides
+- On singularity this is slightly involved, you'll need a library directory
+
+```{r}
+dir.create("~/tmp_rlibs")
+.libPaths(new = "~/tmp_rlibs")
+install.packages("xaringan")
+```
+
+- If you restart your session for any reason, you'll need to re-run the `.libPaths` command. 
+  Note that rendered slides cannot be viewed from within the singularity container.
 ---
 
 # The dataset: ADNI
@@ -597,7 +613,12 @@ class: center
 
 ---
 
-$$ P(\theta) $$
+# Different Probabilities
+
+- Frequentists believe that probabilities represent the long-run proportion of events
+- Under this model $P(\theta)$ doesn't make much sense. 
+- Ramsey and DeFinetti showed that probability can also represent degree of belief.
+- Under this model $P(\theta)$ is an assesment of what you think the the parameter will be.
 
 ---
 
@@ -706,6 +727,8 @@ $\color{blue}{P(D | \theta)}$
 
 # In words
 
+$$ \color{red}{P(\theta | D)} \propto \color{orange}{P(\theta)}\color{blue}{P(D | \theta)}$$
+
 The <font color="red">probability of parameters given our data</font> is proportional to <font color="orange">how probable we
 thought they were before</font> adjusted by <font color="blue">how well they agree with the data we saw</font>.
 
@@ -741,7 +764,7 @@ $\epsilon$ is normally distributed with some unknown variance $\sigma$
 - In order to do this we have specify our prior belief about $\mathbf{\beta}$
 - If we say we know nothing about $\mathbf{\beta}$, we get identical estimates
   to frequentism
-
+- For our model we'll say $\beta \sim \mathbb{N}(0,5)$
 
 ---
 
@@ -752,6 +775,7 @@ set.seed(20180613)
 age <- rnorm(100)
 brain_volume <- 3 * age + rnorm(100)
 plot(age, brain_volume)
+abline(0, 3)
 ```
 
 ---
@@ -759,7 +783,7 @@ plot(age, brain_volume)
 # Fit a bayesian linear model
 
 - For this we'll use the package `rstanarm`
-
+- 
 
 ```{r}
 suppressMessages(library(rstanarm))
