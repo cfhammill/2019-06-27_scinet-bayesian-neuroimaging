@@ -1448,7 +1448,7 @@ In this case, the extra hierarchy level has little effect
 ---
 # A look at plots - LMCI as before
 .small[
-```{r, fig.height=3.5}
+```{r, fig.height=2.5}
 suppressMessages(library(gridExtra))
 vars <- colnames(twolevelhierarchym)
 structvars <- grep('b.+structure', vars, value = T)
@@ -1460,9 +1460,13 @@ twolevelstructs <- twolevelhierarchym[,structvars] +
   twolevelhierarchym[,correspondingtissue] +
   twolevelhierarchym[,correspondingmain]
 
+ylabels <- tissueTable %>% arrange(name) %>% select(name)
+
 grid.arrange(
-  mcmc_intervals(twolevelstructs, regex_pars = "DX_blLMCI") + ggtitle("Two level"),
-  mcmc_intervals(structswmain, regex_pars = "DX_blLMCI") + ggtitle("Flat"), 
+  mcmc_intervals(twolevelstructs, regex_pars = "DX_blLMCI") + 
+    ggtitle("Two level") + scale_y_discrete(labels=ylabels$name),
+  mcmc_intervals(structswmain, regex_pars = "DX_blLMCI") +
+    ggtitle("Flat") + scale_y_discrete(labels=ylabels$name),
   ncol=2)
 ```
 ]
