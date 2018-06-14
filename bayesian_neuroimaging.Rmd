@@ -69,6 +69,7 @@ cd Scinet-SS-bayesian-neuroimaging-R
 ## cp in some extra files <use scp if you're working on your own laptop>
 cp /bb/scinet/course/ss2018/3_bm/7_mrir/ADNI2_BL_MAGeT_Hippocampus_subfields.csv .
 cp /bb/scinet/course/ss2018/3_bm/7_mrir/flathierarchy.Rds .
+cp /bb/scinet/course/ss2018/3_bm/7_mrir/twolevelhierarchy.Rds .
 ```
 ---
 
@@ -95,7 +96,7 @@ module load singularity
 
 # Run the container
 
-- Run the container <this command will remain running>
+- Run the container <this command will remain running>, can be sent to the background
 
 ```{r, engine = "bash", eval = FALSE}
 module load singularity/2.5.1
@@ -124,9 +125,6 @@ dir.create("~/tmp_rlibs")
 .libPaths(new = "~/tmp_rlibs")
 install.packages("xaringan")
 ```
-
-- If you restart your session for any reason, you'll need to re-run the `.libPaths` command. 
-  Note that rendered slides cannot be viewed from within the singularity container.
   
 ---
 class: middle
