@@ -612,6 +612,9 @@ class: center
 ## Bayesian Statistics
 
 - Laplace generalized Bayes Theorem into it's modern form. While working on sex-ratios in French births.
+- For light reading on the history of bayesianism consider reading [the theory that would not die](https://yalebooks.yale.edu/book/9780300188226/theory-would-not-die)
+
+## Bayes in brief
 - Start with some parameters $\theta$
 - Collect some data $D$
 - And deduce the probability of different values of $\theta$ given that you observed $D$
@@ -626,9 +629,10 @@ class: center
 - Under this model $P(\theta)$ doesn't make much sense. 
 - Ramsey and DeFinetti showed that probability can also represent degree of belief.
 - Under this model $P(\theta)$ is an assesment of what you think the the parameter will be.
-
+- For some of the philosophy underpinning bayesian reasoning consider reading 
+  [Bayesian philosophy of science](http://www.laeuferpaar.de/Papers/BookFrame_v1.pdf)
+  
 ---
-
 class: middle
 
 # Bayes' Theorem Redux
@@ -843,6 +847,7 @@ mcmc_areas(as.matrix(bl), pars = "age")
   *this is not what stan does*
 - Stan *approximates* the posterior using samples
 - Samples are generated with markov-chain monte carlo (MCMC)
+- For more details on the technique see Michael Betancourt's [A conceptual introduction to Hamiltonian Monte Carlo](https://arxiv.org/abs/1701.02434)
 
 ---
 
@@ -868,7 +873,8 @@ ca1_ex <-
   mutate(volume = scale_vec(L_CA1 + R_CA1))
 ```
 
-Scaling here helps improve model fitting, an allows you to interpret parameters in terms of whole sample standard deviations.
+- Scaling here helps improve model fitting, an allows you to interpret parameters in terms of whole sample standard deviations.
+- For details on why this is a good idea consider checking out Gelman and Hill's [Data Analysis Using Regression and Multilevel/Hierarchical Models](http://www.stat.columbia.edu/~gelman/arm/)
 
 ---
 
