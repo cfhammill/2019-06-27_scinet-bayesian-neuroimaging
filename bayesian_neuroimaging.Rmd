@@ -124,9 +124,6 @@ dir.create("~/tmp_rlibs")
 .libPaths(new = "~/tmp_rlibs")
 install.packages("xaringan")
 ```
-
-- If you restart your session for any reason, you'll need to re-run the `.libPaths` command. 
-  Note that rendered slides cannot be viewed from within the singularity container.
   
 ---
 class: middle
