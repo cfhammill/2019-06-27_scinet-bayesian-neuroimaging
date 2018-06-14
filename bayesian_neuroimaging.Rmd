@@ -1339,6 +1339,42 @@ round(p.adjust(
   3)
 ```
 
+---
+
+# Comparing probabilities
+
+```{r}
+LMCIprobs <- structswmain %>% 
+  as.data.frame %>% 
+  gather(mterm, value) %>%
+  group_by(mterm) %>% 
+  summarize(median=median(value),
+            prob=case_when(
+              median > 0 ~ 1 - mean(value>0),
+              median < 0 ~ 1 - mean(value<0)
+            )) %>%
+  mutate(roi = sub('.+structure:(.+)\\]', '\\1', mterm),
+         roi = sub('_', ' ', roi),
+         term = sub('b\\[(.+) str.+', '\\1', mterm)) %>%
+  filter(term=="DX_blLMCI") %>%
+  select(roi, median, prob)
+
+LMCIq <- hpcSym$Get("LMCI", filterFun = isLeaf) %>% 
+  as.data.frame() %>% 
+  gather(roi, p) %>%
+  mutate(q=p.adjust(p, 'fdr'),
+         roi=sub('\\.', ' ', roi))
+```
+
+---
+
+# Comparing probabilities
+
+```{r}
+inner_join(LMCIprobs, LMCIq) %>% mutate_at(vars(median:q), round, 3)
+```
+
+
 
 ---
 
