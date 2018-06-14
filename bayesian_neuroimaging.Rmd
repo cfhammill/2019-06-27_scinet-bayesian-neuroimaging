@@ -263,21 +263,6 @@ DT::datatable(rTable %>% remove_rownames() %>%
 
 ---
 
-# Interpretting these results
-
-- After fitting our models we're left with:
-
-1. coefficient estimates
-1. t-statistics
-1. p-values
-
-- We know if our model assumptions are satisfied our t-statistics
-  have a known distribution. 
-- From this distribution we can figure out the probability of t-statistics
-  as large or larger than the one we observed (p-value)
-
----
-
 # Frequentist Null Hypothesis Testing
 
 - To form conclusions in frequentism we typically lean on null hypothesis testing.
@@ -290,6 +275,33 @@ DT::datatable(rTable %>% remove_rownames() %>%
 - So if we reject all p-values when they are below 0.05 we have a 5% chance of
   rejecting when the null model is in fact true.
 - If this is confusing, you're not alone, this is very hard to wrap your mind around.
+
+---
+
+# Zoom in on a single structure
+
+```{r}
+adniLong %>%
+  split(.$structure) %>%
+  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
+  first %>%
+  summary
+```
+
+---
+
+# Interpreting these results
+
+- After fitting our models we're left with:
+
+1. coefficient estimates
+1. t-statistics
+1. p-values
+
+- We know if our model assumptions are satisfied our t-statistics
+  have a known distribution. 
+- From this distribution we can figure out the probability of t-statistics
+  as large or larger than the one we observed (p-value)
 
 ---
 
