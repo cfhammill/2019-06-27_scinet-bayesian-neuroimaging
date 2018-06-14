@@ -119,7 +119,7 @@ singularity exec \
 - You'll need the package "xaringan" to render the slides
 - On singularity this is slightly involved, you'll need a library directory
 
-```{r}
+```{r, eval = FALSE}
 dir.create("~/tmp_rlibs")
 .libPaths(new = "~/tmp_rlibs")
 install.packages("xaringan")
