@@ -69,6 +69,7 @@ cd Scinet-SS-bayesian-neuroimaging-R
 ## cp in some extra files <use scp if you're working on your own laptop>
 cp /bb/scinet/course/ss2018/3_bm/7_mrir/ADNI2_BL_MAGeT_Hippocampus_subfields.csv .
 cp /bb/scinet/course/ss2018/3_bm/7_mrir/flathierarchy.Rds .
+cp /bb/scinet/course/ss2018/3_bm/7_mrir/twolevelhierarchy.Rds .
 ```
 ---
 
