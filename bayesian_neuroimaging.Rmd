@@ -240,16 +240,31 @@ DT::datatable(rTable %>% remove_rownames() %>%
 
 ---
 
-# Frequentist Statistics
+# Interpretting these results
 
-- In frequentism we frequently concern ourselves with null hypothesis testing
-- Null hypotheses are reference models you compare against your data.
-- If your data (and more extreme data) would be very unlikely given your null model
+- After fitting our models we're left with:
+
+1. coefficient estimates
+1. t-statistics
+1. p-values
+
+- We know if our model assumptions are satisfied our t-statistics
+  have a known distribution. 
+- From this distribution we can figure out the probability of t-statistics
+  as large or larger than the one we observed (p-value)
+
+---
+
+# Frequentist Null Hypothesis Testing
+
+- To form conclusions in frequentism we typically lean on null hypothesis testing.
+- Null hypotheses are parameter values for your model you'd like to disprove
+- If your statistics (and more extreme statistics) would be very unlikely given your null model
   you reject the null hypothesis, and conclude that the null hypothesis is not correct.
-- Choosing a threshold for this probability (e.g. 0.05) and rejecting when the likelihood
-  is below the threshold gives you a fixed probability of making a "Type I" error, which conveniently
-  is equal to your threshold.
-- So if we reject all likelihoods (p-values) when they are below 0.05 we have a 5% chance of
+- Choosing a threshold for this probability (e.g. 0.05) and rejecting when your p-value
+  is below the threshold gives you a fixed probability of making a "Type I" error, 
+  which conveniently is equal to your threshold.
+- So if we reject all p-values when they are below 0.05 we have a 5% chance of
   rejecting when the null model is in fact true.
 - If this is confusing, you're not alone, this is very hard to wrap your mind around.
 
@@ -261,7 +276,14 @@ DT::datatable(rTable %>% remove_rownames() %>%
 - After 14 tests you have a better than a 50/50 chance of having made at least one mistake
 - How do we control for this?
 - Two main approaches Family-Wise Error Rate (FWER) control and False-Discovery Rate (FDR) control.
-- In neuroimaging we tend to use FDR control.
+
+---
+
+# FWER
+
+- In family-wise error rate control, we try to limit the chance we will at least one
+  type I error.
+- Quite conservative, so in neuroimaging we tend to use False Discovery Rate control.
 
 ---
 
@@ -269,13 +291,13 @@ DT::datatable(rTable %>% remove_rownames() %>%
 
 - Instead of trying to control our chances of making at least one mistake, let's try to control the
   fraction of mistakes we make.
-- If we have 100's or more tests we can accept a few mistakes in the interest of finding the
-  important results.
 - To do this we employ the Benjamini-Hochberg procedure.
 - The Benjamini-Hochberg procedure turns our p-values in q-values. Rejecting all q-values below some
   threshold controls the expected number of mistakes.
 - For example if we reject all hypotheses with q < 0.05, we expect about 5% of our results to be
   false discoveries (type I errors). 
+- If we have 100's or more tests we can accept a few mistakes in the interest of finding the
+  important results.
 
 ---
 
@@ -493,6 +515,7 @@ Have you ever...
 1. Been frustrated that a difference in significance doesn't mean a significant difference?
 1. Known some values for a parameter are impossible but been unable to use that to your advantage?
 1. Wanted to ask more interesting questions than whether or not a parameter is or isn't zero?
+1. Wanted to use information from the literature to improve your estimates?
 
 ---
 
@@ -504,6 +527,7 @@ Have you ever...
 1. Been frustrated that a difference in significance doesn't mean a significant difference?
 1. Known some values for a parameter are impossible but been unable to use that to your advantage?
 1. Wanted to ask more interesting questions than whether or not a parameter is or isn't zero?
+1. Wanted to use information from the literature to improve your estimates?
 
 Then Bayesian statistics might be right for you!
 
@@ -567,9 +591,13 @@ class: center
 - Laplace generalized Bayes Theorem into it's modern form. While working on sex-ratios in French births.
 - Start with some parameters $\theta$
 - Collect some data $D$
-- And deduce the probability of your parameters 
+- And deduce the probability of different values of $\theta$ given that you observed $D$
 - Key difference between Bayesianism and Frequentism is that view that $\theta$ has an associated
   probability distribution. In frequentism $\theta$ is an unknown constant.
+
+---
+
+$$ P(\theta) $$
 
 ---
 
