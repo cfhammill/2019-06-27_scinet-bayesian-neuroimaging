@@ -1446,6 +1446,28 @@ mcmc_intervals(twolevelhierarchym, regex_pars="b\\[DX_blAD", pars="DX_blAD")
 In this case, the extra hierarchy level has little effect
 
 ---
+# A look at plots - LMCI as before
+.small[
+```{r, fig.height=3.5}
+suppressMessages(library(gridExtra))
+vars <- colnames(twolevelhierarchym)
+structvars <- grep('b.+structure', vars, value = T)
+
+correspondingtissue <- sub('b\\[(.+) structure:tissue:.+:(.+)\\]', 'b[\\1 tissue:\\2]', structvars)
+correspondingmain <- sub('b\\[(.+) structure:tissue:.+:(.+)\\]', '\\1', structvars)
+
+twolevelstructs <- twolevelhierarchym[,structvars] + 
+  twolevelhierarchym[,correspondingtissue] +
+  twolevelhierarchym[,correspondingmain]
+
+grid.arrange(
+  mcmc_intervals(twolevelstructs, regex_pars = "DX_blLMCI") + ggtitle("Two level"),
+  mcmc_intervals(structswmain, regex_pars = "DX_blLMCI") + ggtitle("Flat"), 
+  ncol=2)
+```
+]
+
+---
 
 # Installing RMINC
 
