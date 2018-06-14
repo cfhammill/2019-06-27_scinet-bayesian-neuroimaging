@@ -1374,7 +1374,78 @@ LMCIq <- hpcSym$Get("LMCI", filterFun = isLeaf) %>%
 inner_join(LMCIprobs, LMCIq) %>% mutate_at(vars(median:q), round, 3)
 ```
 
+---
 
+# A more complex hierarchy
+
+Create an ancestor variable from the tree, in this case corresponding to WM or GM
+
+```{r}
+hpc$Do(function(x){
+  x$normVolumes <- scale(x$volumes)
+})
+hpc$Do(function(x){
+  x$tissue <- x$parent$name
+}, filterFun = isLeaf)
+
+hpcSym <- Clone(hpc)
+Prune(hpcSym, isNotLeaf)
+
+hpcSym$Do(function(x){
+  x$tissue <- x$parent$name
+}, filterFun = isLeaf)
+
+data <- hpcSym$Get("normVolumes", filterFun=isLeaf)
+colnames(data) <- hpcSym$Get("name", filterFun = isLeaf)
+
+tissueTable <- ToDataFrameTable(hpcSym, "name", "tissue")
+```
+
+---
+# A more complex hierarchy
+
+```{r}
+adniLongNorm <- adni %>% mutate(AGE=AGE/10) %>% 
+  select(PTID:DX_bl) %>% 
+  cbind(data) %>% 
+  #sample_n(50) %>%
+  gather(structure, volume, CA1:Fornix) %>%
+  left_join(tissueTable, by=c("structure" = "name"))
+  
+adniLongNorm %>% sample_n(5)
+```
+
+---
+# A more complex hierarchy
+
+Allow for structure within tissue
+
+```{r, eval=F}
+# this takes a long time unless a small subset of the data is used
+twolevelhierarchy <- 
+  stan_lmer(volume ~ AGE+PTGENDER+DX_bl + (1|PTID) + 
+              (AGE+PTGENDER+DX_bl|tissue/structure), 
+            adniLongNorm , chains=3, cores=3, adapt_delta = 0.99)
+```
+
+```{r}
+# loads the precomputed output from the above command
+twolevelhierarchy <- readRDS("twolevelhierarchy.Rds")
+twolevelhierarchym <- as.matrix(twolevelhierarchy)
+```
+
+---
+# A look at the new encoding
+
+Remember that you are encoding the difference from the level one up
+
+```{r, fig.height=4}
+mcmc_intervals(twolevelhierarchym, regex_pars="b\\[DX_blAD", pars="DX_blAD")
+```
+
+--
+
+In this case, the extra hierarchy level has little effect
 
 ---
 
