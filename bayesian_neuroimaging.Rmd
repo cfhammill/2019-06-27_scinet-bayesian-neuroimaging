@@ -1,7 +1,7 @@
 ---
 title: "Bayesian analysis of Neuroimaging data with R"
-author: "Chris Hammill<br>Jason Lerch"
-date: "2018-06-14"
+author: "<b>Chris Hammill</b><br>Jason Lerch"
+date: "2019-06-27"
 output:
   xaringan::moon_reader:
     lib_dir: libs
@@ -37,6 +37,7 @@ output:
 
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE)
+library(tidyverse)
 library(knitr)
 opts_chunk$set(dpi=200, fig.height=5.5, fig.width=10)
 #opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
@@ -75,9 +76,9 @@ git clone https://github.com/Mouse-Imaging-Centre/Scinet-SS-bayesian-neuroimagin
 cd Scinet-SS-bayesian-neuroimaging-R
 
 ## cp in some extra files <use scp if you're working on your own laptop>
-cp /bb/scinet/course/ss2018/3_bm/7_mrir/ADNI2_BL_MAGeT_Hippocampus_subfields.csv .
-cp /bb/scinet/course/ss2018/3_bm/7_mrir/flathierarchy.Rds .
-cp /bb/scinet/course/ss2018/3_bm/7_mrir/twolevelhierarchy.Rds .
+cp /scinet/course/ss2019/3/8_bayesianmri/ADNI2_BL_MAGeT_Hippocampus_subfields.csv .
+cp /scinet/course/ss2019/3/8_bayesianmri/flathierarchy.Rds .
+cp /scinet/course/ss2019/3/8_bayesianmri/twolevelhierarchy.Rds .
 ```
 ---
 
@@ -86,8 +87,9 @@ cp /bb/scinet/course/ss2018/3_bm/7_mrir/twolevelhierarchy.Rds .
 - First ssh to niagara and set your port to forward
 
 ```{r, engine = "bash", eval = FALSE}
-ssh -L8787:localhost:<your-port> <you>@niagara.scinet.utoronto.ca
-ssh -L<your-port>:localhost:<your-port> tds01
+ssh -L8787:localhost:<your-port> <you>@teach.scinet.utoronto.ca
+debugjob
+ssh -f -N -T -R <your-port>:localhost:<your-port> <you>@teach.scinet.utoronto.ca
 ```
 
 - To use the singularity container you will need to set an environment variable with a temporary RStudio password. You will also
@@ -96,7 +98,7 @@ ssh -L<your-port>:localhost:<your-port> tds01
 ```{r, engine = "bash", eval = FALSE}
 export RSTUDIO_PASSWORD="dont_use_this_fake_password"
 
-mkdir $SCRATCH/tmp
+mkdir $SCRATCH/tmp #Ignore the error if this exists already
 module load singularity
 ```
 
@@ -107,173 +109,56 @@ module load singularity
 - Run the container <this command will remain running>, can be sent to the background
 
 ```{r, engine = "bash", eval = FALSE}
-module load singularity/2.5.1
 singularity exec \
-  --bind /bb/scinet/course/ss2018/3_bm/7_mrir/rstudio_auth.sh:/usr/lib/rstudio-server/bin/rstudio_auth.sh \
+  --bind /scinet/course/ss2019/3/8_bayesianmri/rstudio_auth.sh:/usr/lib/rstudio-server/bin/rstudio_auth.sh \
   --bind $SCRATCH/tmp:/tmp \
   --bind $SCRATCH:$SCRATCH \
-  /bb/scinet/course/ss2018/3_bm/7_mrir/RMINC-develop-2018-06-13-6793fefb8a5a.img \
+  /scinet/course/ss2019/3/8_bayesianmri/RMINC-rserver-scinet-2019-06-26.imgXS \
   rserver \
   --auth-none 0 \
   --auth-pam-helper-path rstudio_auth.sh \
   --www-port <your-port>
 ```
 
-- Then navigate to localhost:8787 in your browser, use your scinet username and `$RSTUDIO_PASSWORD$` 
+- Then navigate to localhost:8787/ in your browser, use your scinet username and `$RSTUDIO_PASSWORD$` 
 
 ---
 
-# Optional step to compile the slides
+# R Preamble
 
-- You'll need the package "xaringan" to render the slides
-- On singularity this is slightly involved, you'll need a library directory
+In this course we make heavy use of the `tidyverse` libraries and `purrr`
+Some common functions we use:
 
 ```{r, eval = FALSE}
-dir.create("~/tmp_rlibs")
-.libPaths(new = "~/tmp_rlibs")
-install.packages("xaringan")
+x %>% f # pipe, take `x` and apply `f` to it. `f(x)`
+
+x %>% f(5, .) # pipe, take `x` and use it as the second argument to `f`.
+              # `f(5, x)`
+
+d %>% select(colA) # take the subset `d` thats includes just `colA`
+
+d %>% rename(colB = colA) # rename `colA` to `colB` in a copy of d
+
+d %>% mutate(colB = colA * 5) # make a new column `colB` that is
+                              # 5 times the elements of `colA`
+
+map(1:5, function(x) x * 2) # multiply each element of 1 through 5 by 2
 ```
-  
----
-class: middle
-
-# The dataset: ADNI
-
-* baseline scans from ADNI2
-* multi-site initiative to study Alzheimer's and Mild Cognitive Impairment
-
-With much gratitude to Nikhil Bhagwat of the CoBrA Lab (PI: Chakravarty) for providing us with processed data.
-
----
-
-# MAGeT - the algorithm
-
-![MAGeT figure](MAGeT-fig.png)
-
-Chakravarty MM, Steadman P, van Eede MC, Calcott RD, Gu V, Shaw P, Raznahan A, Collins DL, Lerch JP. Performing label-fusion-based segmentation using multiple automatically generated templates. Hum Brain Mapp. 2013 Oct;34(10):2635–54.
-
----
-
-# MAGeT - the atlas
-
-
-```{r, echo=F, out.height="400px"}
-knitr::include_graphics("hippoatlas.png")
-```
-
-.small[
-Pipitone J, Park MTM, Winterburn J, Lett TA, Lerch JP, Pruessner JC, Lepage M, Voineskos AN, Chakravarty MM, Alzheimer’s Disease Neuroimaging Initiative. Multi-atlas segmentation of the whole hippocampus and subfields using multiple automatically generated templates. Neuroimage. 2014 Nov 1;101:494–512.
-
-Winterburn JL, Pruessner JC, Chavez S, Schira MM, Lobaugh NJ, Voineskos AN, Chakravarty MM. A novel in vivo atlas of human hippocampal subfields using high-resolution 3 T magnetic resonance imaging. Neuroimage. 2013 Jul 1;74:254–65.
-]
----
-
-# Load the data
-
-Read in the processed files
-
-```{r}
-suppressMessages(library(tidyverse))
-adni <- read.csv("ADNI2_BL_MAGeT_Hippocampus_subfields.csv")
-names(adni)
-```
-
-
----
-#Reorganize the diagnosis label
-
-```{r}
-library(forcats)
-adni <- adni %>% 
-  mutate(DX_bl=fct_relevel(DX_bl, 
-                           "CN", "SMC", "EMCI", "LMCI", "AD"))
-```
-
----
-
-# Data organization
-
-Make the dataframe long rather than wide
-
-```{r}
-adniLong <- adni %>% 
-  select(-X) %>% 
-    gather(structure, volume, L_CA1:R_Mam)
-adniLong %>% 
-  select(PTID, DX_bl, structure, volume) %>% sample_n(5)
-```
-
-
----
-
-# A quick look at the data
-
-```{r, fig.height=5.5}
-library(ggplot2)
-ggplot(adniLong) + aes(x=DX_bl, y=AGE) + geom_boxplot()
-```
-
----
-
-# A quick look at hippocampal volume
-
-```{r, tidy=FALSE, fig.height=5}
-adniLong %>% group_by(PTID) %>% 
-  summarize(DX=DX_bl[1], GENDER=PTGENDER[1], HPC=sum(volume)) %>%
-  ggplot() + aes(DX, HPC, colour=GENDER) + geom_boxplot()
-```
-
 ---
 
 # Classic Statistics
 
 1. Decide on model
 1. Apply model to every ROI/voxel separately
-1. Widen confidence intervals to account for multiple comparisons
-
----
-
-# map for looping over structures
-
-```{r}
-library(broom)
-adniLong %>%
-  split(.$structure) %>%
-  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
-  map_dfr(tidy, .id='roi') %>% head(14)
-```
----
-
-# better overview
-
-```{r}
-rTable <- adniLong %>%
-  split(.$structure) %>%
-  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
-  map_dfr(tidy, .id='roi') %>% 
-  filter(startsWith(term, "DX")) %>%
-  select(roi, term, statistic) %>%
-  spread(term, statistic) 
-```
-
----
-# better overview
-```{r}
-rTable
-```
-
----
-# better overview
-```{r}
-DT::datatable(rTable %>% remove_rownames() %>% 
-  column_to_rownames("roi") %>% round(2), options=list(pageLength=7))
-```
+1. Compute p-values from per voxel hypothesis tests
+1. Apply multiple comparisons corrections
+1. Become famous
 
 ---
 
 # Frequentist Null Hypothesis Testing
 
-- To form conclusions in frequentism we typically lean on null hypothesis testing.
+- To form conclusions in frequentism we typically lean on **null hypothesis testing**.
 - Null hypotheses are parameter values for your model you'd like to disprove
 - If your statistics (and more extreme statistics) would be very unlikely given your null model
   you reject the null hypothesis, and conclude that the null hypothesis is not correct.
@@ -285,271 +170,12 @@ DT::datatable(rTable %>% remove_rownames() %>%
 - If this is confusing, you're not alone, this is very hard to wrap your mind around.
 
 ---
-
-# Zoom in on a single structure
-
-```{r}
-adniLong %>%
-  split(.$structure) %>%
-  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
-  first %>%
-  summary
-```
-
----
-
-# Interpreting these results
-
-- After fitting our models we're left with:
-
-1. coefficient estimates
-1. t-statistics
-1. p-values
-
-- We know if our model assumptions are satisfied our t-statistics
-  have a known distribution. 
-- From this distribution we can figure out the probability of t-statistics
-  as large or larger than the one we observed (p-value)
-
----
-
-# Dealing with Many Tests
-
-- If you're testing a lot of hypotheses, a 5% chance of making a mistake adds up
-- After 14 tests you have a better than a 50/50 chance of having made at least one mistake
-- How do we control for this?
-- Two main approaches Family-Wise Error Rate (FWER) control and False-Discovery Rate (FDR) control.
-
----
-
-# FWER
-
-- In family-wise error rate control, we try to limit the chance we will at least one
-  type I error.
-- Quite conservative, so in neuroimaging we tend to use False Discovery Rate control.
-
----
-
-# FDR
-
-- Instead of trying to control our chances of making at least one mistake, let's try to control the
-  fraction of mistakes we make.
-- To do this we employ the Benjamini-Hochberg procedure.
-- The Benjamini-Hochberg procedure turns our p-values in q-values. Rejecting all q-values below some
-  threshold controls the expected number of mistakes.
-- For example if we reject all hypotheses with q < 0.05, we expect about 5% of our results to be
-  false discoveries (type I errors). 
-- If we have 100's or more tests we can accept a few mistakes in the interest of finding the
-  important results.
-
----
-
-# multiple comparisons - omnibus FDR
-
-```{r}
-pTable <- adniLong %>%
-  split(.$structure) %>%
-  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
-  map_dfr(tidy, .id='roi') %>% 
-  filter(startsWith(term, "DX")) %>%
-  select(roi, term, p.value) %>%
-  spread(term, p.value) %>%
-  remove_rownames() %>%
-  column_to_rownames("roi") %>%
-  as.matrix()
-qTable <- pTable
-qTable[,] <- p.adjust(pTable, 'fdr')
-```
-
----
-
-# multiple comparisons - omnibus FDR
-
-```{r}
-qTable
-```
-
----
-
-# Hippocampal anatomical hierarchy
-
-Setting up a simple hierarchy, dividing the hippocampus in grey matter and tracts.
-
-1. Hippocampal Formation
-    1. Grey Matter
-        1. CA1
-        1. CA2/CA3
-        1. CA4/DG
-        1. subiculum
-        1. stratum
-        1. Mammilary bodies
-    1. White Matter
-        1. Alveus
-        1. Fimbria
-        1. Fornix
-
----
-
-# Hippocampal anatomical hierarchy
-
-```{r}
-library(data.tree)
-hpc <- Node$new("HPC")
-gm <- hpc$AddChild("GM")
-ca1 <- gm$AddChild("CA1")
-lca1 <- ca1$AddChild("left CA1")
-lca1$volumes <- adni$L_CA1
-rca1 <- ca1$AddChild("right CA1")
-rca1$volumes <- adni$R_CA1
-ca23 <- gm$AddChild("CA2CA3")
-lca23 <- ca23$AddChild("left CA2CA3")
-lca23$volumes <- adni$L_CA2CA3
-rca23 <- ca23$AddChild("right CA2CA3")
-rca23$volumes <- adni$R_CA2CA3
-ca4 <- gm$AddChild("CA4DG")
-lca4 <- ca4$AddChild("left CA4DG")
-lca4$volumes <- adni$L_CA4DG
-rca4 <- ca4$AddChild("right CA4DG")
-rca4$volumes <- adni$R_CA4DG
-subiculum <- gm$AddChild("subiculum")
-lsubiculum <- subiculum$AddChild("left subiculum")
-lsubiculum$volumes <- adni$L_subiculum
-rsubiculum <- subiculum$AddChild("right subiculum")
-rsubiculum$volumes <- adni$R_subiculum
-stratum <- gm$AddChild("stratum")
-lstratum <- stratum$AddChild("left stratum")
-lstratum$volumes <- adni$L_stratum
-rstratum <- stratum$AddChild("right stratum")
-rstratum$volumes <- adni$R_stratum
-mam <- gm$AddChild("Mammillary bodies")
-lmam <- mam$AddChild("left Mammillary bodies")
-lmam$volumes <- adni$L_Mam
-rmam <- mam$AddChild("right Mammillary bodies")
-rmam$volumes <- adni$R_Mam
-wm <- hpc$AddChild("WM")
-alveus <- wm$AddChild("Alveus")
-lalveus <- alveus$AddChild("left Alveus")
-lalveus$volumes <- adni$L_Alv
-ralveus <- alveus$AddChild("right Alveus")
-ralveus$volumes <- adni$R_Alv
-fimbria <- wm$AddChild("Fimbria")
-lfimbria <- fimbria$AddChild("left Fimbria")
-lfimbria$volumes <- adni$L_Fimb
-rfimbria <- fimbria$AddChild("right Fimbria")
-rfimbria$volumes <- adni$R_Fimb
-fornix <- wm$AddChild("Fornix")
-lfornix <- fornix$AddChild("left Fornix")
-lfornix$volumes <- adni$L_Fornix
-rfornix <- fornix$AddChild("right Fornix")
-rfornix$volumes <- adni$R_Fornix
-```
-
----
-
-# Hippocampal anatomical hierarchy
-
-```{r}
-hpc
-```
-
----
-
-# Hippocampal anatomical hierarchy
-
-```{r, fig.height=6, dpi=72}
-SetGraphStyle(hpc, rankdir="LR")
-plot(hpc)
-```
-
----
-# Aggregate up the tree
-
-```{r}
-hpc$Do(function(x){
-  x$volumes <- Aggregate(x, "volumes", rowSums)
-}, traversal="post-order", filterFun=isNotLeaf)
-
-hpc$Do(function(x) {
-  x$meanVolume <- mean(x$volumes)
-})
-```
-
-
----
-
-# Tree graph
-
-```{r, fig.height=4}
-library(treemap)
-ToDataFrameTable(hpc, "pathString", "meanVolume", "name") %>% 
-  mutate(path=strsplit(pathString, "/"), 
-         struct=map_chr(path, ~ .x[3]), 
-         tissue=map_chr(path, ~ .x[2])) %>% 
-  select(struct, tissue, name, meanVolume) %>% 
-  treemap(index=c("tissue", "struct"), vSize="meanVolume")
-```
-
-
----
-# Statistics on the tree
-
-```{r}
-hpc$Do(function(x){
-  adni$volumes <- x$volumes
-  x$stats <- 
-    lm(volumes ~ AGE+PTGENDER+DX_bl, adni) %>%
-    tidy() %>%
-    filter(startsWith(term, "DX")) %>%
-    select(term, estimate, statistic, p.value)
-})
-```
----
-
-# Statistics on the tree
-
-```{r}
-print(hpc, AD=function(x) 
-  x$stats %>% filter(term=="DX_blAD") %>% select(statistic) )
-```
-
----
-
-# Statistics on the tree
-
-```{r}
-print(hpc, AD=function(x) 
-  x$stats %>% filter(term=="DX_blAD") %>% 
-    select(statistic),
-  filterFun=isNotLeaf )
-```
-
-
----
-
-# Statistics on the tree
-
-```{r, fig.height=3}
-hpc$Do(function(x){
-  x$ad <- -log10(x$stats %>% filter(term=="DX_blAD") %>% 
-                   select(p.value))
-})
-
-ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %>% 
-  mutate(path=strsplit(pathString, "/"), 
-         struct=map_chr(path, ~ .x[3]), 
-         tissue=map_chr(path, ~ .x[2])) %>% 
-  select(struct, tissue, name, meanVolume, ad) %>% 
-  treemap(index=c("tissue", "struct"), vSize="meanVolume", 
-    vColor="ad", type="value")
-```
-
-
----
 class: center
 
 # And now for Bayesianism!
 
 ---
+
 # Why Bayesian Statistics?
 
 Have you ever...
@@ -729,7 +355,7 @@ $\color{red}{P(\theta|D)}$
 - The posterior is probability distribution over parameters.
 - Depends on the data we observed.
 - Can be used to answer interesting questions. For
-example how likely is an effect between two biologically meaninful boundaries.
+example how likely is an effect between two biologically meaningful boundaries.
 
 ---
 class: middle
@@ -763,19 +389,19 @@ $$ \color{red}{P(\theta | D)} \propto \color{orange}{P(\theta)}\color{blue}{P(D 
 The <font color="red">probability of parameters given our data</font> is proportional to <font color="orange">how probable we
 thought they were before</font> adjusted by <font color="blue">how well they agree with the data we saw</font>.
 
-![](posterior.gif)
+![](conjugate.png)
 
 ---
 
 # A first example
 
-- Let's revisit linear modelling but this time from a bayesian stand-point.
+- Let's revisit linear modelling from a frequentist and a bayesian stand-point.
 
 $$ \textbf{y} = X\mathbf{\beta} + \mathbf{\epsilon} $$ 
 
 We'll make our probabilistic views explicit
 
-$$ \mathbf{\epsilon} \sim \mathbb{N}(0, \sigma) $$
+$$ \mathbf{\epsilon} \sim \mathcal{N}(0, \sigma) $$
 
 $\epsilon$ is normally distributed with some unknown variance $\sigma$
 
@@ -795,7 +421,7 @@ $\epsilon$ is normally distributed with some unknown variance $\sigma$
 - In order to do this we have specify our prior belief about $\mathbf{\beta}$
 - If we say we know nothing about $\mathbf{\beta}$, we get identical estimates
   to frequentism
-- For our model we'll say $\beta \sim \mathbb{N}(0,5)$
+- For our model we'll say $\beta \sim \mathcal{N}(0,5)$
 
 ---
 
@@ -805,35 +431,15 @@ $\epsilon$ is normally distributed with some unknown variance $\sigma$
 set.seed(20180613)
 age <- rnorm(100)
 brain_volume <- 3 * age + rnorm(100)
+ex <- data.frame(brain_volume = brain_volume, age = age)
+
 plot(age, brain_volume)
 abline(0, 3)
 ```
 
 ---
 
-# Fit a bayesian linear model
-
-- For this we'll use the package `rstanarm`
-- 
-
-```{r}
-suppressMessages(library(rstanarm))
-ex <- data.frame(brain_volume = brain_volume, age = age)
-bl <- stan_glm(brain_volume ~ age, data = ex,
-                prior = normal(0, 5))
-```
-
----
-
-# How'd we do
-
-```{r}
-bl
-```
-
----
-
-# How does `lm` do?
+# Analyze the frequentist way
 
 ```{r}
 lmod <- lm(brain_volume ~ age, data = ex)
@@ -842,29 +448,60 @@ summary(lmod)
 
 ---
 
+# The bayes way
+
+- For this we'll use the package `rstanarm`
+
+```{r}
+suppressMessages(library(rstanarm))
+bl <- stan_glm(brain_volume ~ age, data = ex,
+                prior = normal(0, 5))
+```
+
+---
+
+# rstanarm output
+
+```{r}
+bl
+```
+
+---
+
 # Side-By-Side
+
+We expect a slope of 3 and an intercept of 0
 
 ```{r}
 coef(bl)
 coef(lmod)
 ```
 
+We can see they're giving almost the same answer, because the likelihood is much stronger than
+the prior in the bayesian case.
+
 ---
 
 # Let's look at the posterior
 
-```{r, fig.height = 4}
+```{r, fig.height = 2.5}
 suppressPackageStartupMessages(library(bayesplot))
-mcmc_areas(as.matrix(bl), pars = "age")
+mcmc_areas(as.matrix(bl), pars =  "age", prob = .95)
+mcmc_areas(as.matrix(bl), pars = "(Intercept)", prob = .95)
 ```
 
 ---
 
 # What's happening here?
 
+```{r, eval = FALSE}
+stan_glm(brain_volume ~ age, data = ex,
+         prior = normal(0, 5))
+```
+
 - `rstanarm` is creating a posterior for us, but how?
 - in most bayesian textbooks this is shown first analytically for simple models.
-  *this is not what stan does*
+  **this is not what stan does**
 - Stan *approximates* the posterior using samples
 - Samples are generated with markov-chain monte carlo (MCMC)
 - For more details on the technique see Michael Betancourt's [A conceptual introduction to Hamiltonian Monte Carlo](https://arxiv.org/abs/1701.02434)
@@ -877,12 +514,148 @@ mcmc_areas(as.matrix(bl), pars = "age")
 bl_post <- as.matrix(bl)
 
 str(bl_post[,"age"])
-summary(bl_post[,"age"])
+sum(bl_post[,"age"] > 3) / 4000
 ```
 
 ---
 
-# With real data now
+# Summary so far
+
+- Weak priors don't change results much
+- Bayes' Theorem lets us integrate new observations with prior knowledge/beliefs
+- Bayesian statistics requires a prior distribution and a likelihood function and
+  produces a posterior distribution
+- Posterior distributions are generally approximated with samples
+- Samples allow easy conversion between properties and probabilities
+
+---
+class: center
+
+# Now for some real data!
+
+
+---
+class: middle
+
+# The dataset: ADNI
+
+* baseline scans from ADNI2
+* multi-site initiative to study Alzheimer's and Mild Cognitive Impairment
+
+With much gratitude to Nikhil Bhagwat of the CoBrA Lab (PI: Chakravarty) for providing us with processed data.
+
+---
+
+# MAGeT - the algorithm
+
+![MAGeT figure](MAGeT-fig.png)
+
+Chakravarty MM, Steadman P, van Eede MC, Calcott RD, Gu V, Shaw P, Raznahan A, Collins DL, Lerch JP. Performing label-fusion-based segmentation using multiple automatically generated templates. Hum Brain Mapp. 2013 Oct;34(10):2635–54.
+
+---
+
+# MAGeT - the atlas
+
+
+```{r, echo=F, out.height="400px"}
+knitr::include_graphics("hippoatlas.png")
+```
+
+.small[
+Pipitone J, Park MTM, Winterburn J, Lett TA, Lerch JP, Pruessner JC, Lepage M, Voineskos AN, Chakravarty MM, Alzheimer’s Disease Neuroimaging Initiative. Multi-atlas segmentation of the whole hippocampus and subfields using multiple automatically generated templates. Neuroimage. 2014 Nov 1;101:494–512.
+
+Winterburn JL, Pruessner JC, Chavez S, Schira MM, Lobaugh NJ, Voineskos AN, Chakravarty MM. A novel in vivo atlas of human hippocampal subfields using high-resolution 3 T magnetic resonance imaging. Neuroimage. 2013 Jul 1;74:254–65.
+]
+---
+
+# Load the data
+
+Read in the processed files
+
+```{r}
+suppressMessages(library(tidyverse))
+adni <- read.csv("ADNI2_BL_MAGeT_Hippocampus_subfields.csv")
+names(adni)
+```
+
+---
+
+# Rename columns and fix the diagnosis label
+
+```{r}
+library(forcats)
+adni <-
+  adni %>%
+  rename(age = AGE,
+         id = PTID,
+         dx = DX_bl,
+         sex = PTGENDER
+         ) %>%
+  mutate(dx=fct_relevel(dx, 
+                           "CN", "SMC", "EMCI", "LMCI", "AD"))
+```
+
+---
+
+# Data organization
+
+Make the dataframe long rather than wide
+
+```{r}
+adniLong <- adni %>% 
+  select(-X) %>% 
+    gather(structure, volume, L_CA1:R_Mam)
+adniLong %>% 
+  select(id, dx, structure, volume) %>% sample_n(5)
+```
+
+
+---
+
+# A quick look at the data
+
+```{r, fig.height=5.5}
+library(ggplot2)
+ggplot(adniLong) + aes(x=dx, y=age) + geom_boxplot()
+```
+
+---
+
+# A quick look at hippocampal volume
+
+```{r, tidy=FALSE, fig.height=5}
+adniLong %>% group_by(id) %>% 
+  summarize(dx=dx[1], sex=sex[1], HPC=sum(volume)) %>%
+  ggplot() + aes(dx, HPC, colour=sex) + geom_boxplot()
+```
+
+---
+
+# Zoom in on a single structure
+
+```{r}
+adniLong %>% filter(structure == "L_CA1") %>%
+  lm(volume ~ age+sex+dx, .) %>% summary
+```
+
+---
+
+# Interpreting these results
+
+- After fitting our models we're left with:
+
+1. coefficient estimates
+1. t-statistics
+1. p-values
+
+- We know if our model assumptions are satisfied our t-statistics
+  have a known distribution. 
+- From this distribution we can figure out the probability of t-statistics
+  as large or larger than the one we observed (p-value)
+
+---
+
+# Back to Bayes
 
 - Let's look at the effect of diagnosis on CA1 volume
 
@@ -904,18 +677,18 @@ $$\text{volume} = \beta_{D}D + \epsilon$$
 - We're not going to estimate an intercept for this model, fitting instead the mean volume for each diagnosis
 - in a R formula it will look like
 
-`volume ~ -1 + DX_bl`
+`volume ~ -1 + dx`
 
 - The -1 removes the intercept
 
 ---
 
-#Fit
+# Fit
 
 ```{r}
 invisible(
   capture.output({
-    ca1_mod <- stan_glm(volume ~ -1 + DX_bl, data = ca1_ex)
+    ca1_mod <- stan_glm(volume ~ -1 + dx, data = ca1_ex)
   }))
 
 ca1_mod
@@ -926,13 +699,13 @@ ca1_mod
 So we see that the effect of each diagnosis has on CA1 volume. Let's visualize the posterior for these effects
 
 ```{r, fig.height = 5}
-mcmc_areas(as.matrix(ca1_mod), regex_pars = "DX.*")
+mcmc_areas(as.matrix(ca1_mod), regex_pars = "dx.*")
 ```
 
 ---
 
 ```{r}
-table(ca1_ex$DX_bl)
+table(ca1_ex$dx)
 ```
 
 So we can see some signs that the posterior width is driven in part by sample size, nice.
@@ -950,7 +723,7 @@ ca1_post <- as.matrix(ca1_mod)
 What do we think the probability is that AD patients have smaller CA1s than controls? Easy to answer with the posterior!
 
 ```{r}
-mean(ca1_post[,"DX_blCN"] > ca1_post[,"DX_blAD"])
+mean(ca1_post[,"dxCN"] > ca1_post[,"dxAD"])
 ```
 
 So we're pretty sure about this. 
@@ -960,12 +733,332 @@ So we're pretty sure about this.
 # But how big is the difference?
 
 ```{r, fig.height = 4}
-mcmc_areas(ca1_post[,"DX_blCN", drop = FALSE] - ca1_post[,"DX_blAD"])
+mcmc_areas(ca1_post[,"dxCN", drop = FALSE] - ca1_post[,"dxAD"])
 ```
 
 ---
 
-# Looking at many structures
+# A massively univariate analysis
+
+Here we'll fit a simple linear model (age + sex + diagnosis) at each structure.
+
+```{r}
+library(broom)
+models <-
+  adniLong %>%
+  split(.$structure) %>%
+  map(~lm(volume ~ age+sex+dx, .)) %>%
+  map_dfr(tidy, .id='roi')
+
+head(models, 14)
+```
+---
+
+# better overview
+
+```{r}
+rTable <-
+  models %>%
+  filter(startsWith(term, "dx")) %>%
+  select(roi, term, statistic) %>%
+  spread(term, statistic) 
+```
+
+---
+# better overview
+```{r}
+rTable
+```
+
+---
+
+# better overview
+
+```{r}
+DT::datatable(rTable %>% remove_rownames() %>% 
+  column_to_rownames("roi") %>% round(2), options=list(pageLength=7))
+```
+
+---
+
+# Dealing with Many Tests
+
+- If you're testing a lot of hypotheses, a 5% chance of making a mistake adds up
+- After 14 tests you have a better than a 50/50 chance of having made at least one mistake
+- How do we control for this?
+- Two main approaches Family-Wise Error Rate (FWER) control and False-Discovery Rate (FDR) control.
+
+---
+
+# FWER
+
+- In family-wise error rate control, we try to limit the chance we will at least one
+  type I error.
+- Quite conservative, so in neuroimaging we tend to use False Discovery Rate control.
+
+---
+
+# FDR
+
+- Instead of trying to control our chances of making at least one mistake, let's try to control the
+  fraction of mistakes we make.
+- To do this we employ the Benjamini-Hochberg procedure.
+- The Benjamini-Hochberg procedure turns our p-values in q-values. Rejecting all q-values below some
+  threshold controls the expected number of mistakes.
+- For example if we reject all hypotheses with q < 0.05, we expect about 5% of our results to be
+  false discoveries (type I errors). 
+- If we have 100's or more tests we can accept a few mistakes in the interest of finding the
+  important results.
+
+---
+
+# multiple comparisons - omnibus FDR
+
+```{r}
+pTable <- models %>% 
+  filter(startsWith(term, "dx")) %>%
+  select(roi, term, p.value) %>%
+  spread(term, p.value) %>%
+  remove_rownames() %>%
+  column_to_rownames("roi") %>%
+  as.matrix()
+qTable <- pTable
+qTable[,] <- p.adjust(pTable, 'fdr')
+```
+
+---
+
+# multiple comparisons - omnibus FDR
+
+```{r}
+qTable
+```
+
+---
+
+# Summary so far
+
+- On real data we typically do massively univariate analysis
+- Massively univariate analyses treat each structure as independent
+- Multiple comparison corrections are needed when you have many independent
+  hypothesis tests
+- Converting to bayesian analyses for single structures is about as simple
+  as changing `lm` to `stan_glm`
+
+---
+
+# Are we missing something?
+
+- Before we go and switch to bayesian massively univariate analysis let's
+  think for a moment
+- In the massively univariate approach we ignore that structures are related!
+- We should be able to use information about the other structures to inform
+  our analysis of each structure.
+- We can do this by adding another level of model, complete with more priors
+- This is called multilevel or hierarchical modelling
+- The brain can be viewed as hierarchically organized
+- Can we use all of this extra information somehow?
+
+---
+
+# Hippocampal anatomical hierarchy
+
+For the rest of the course we're going to focus on the following hierarchy
+
+1. Hippocampal Formation
+    1. Grey Matter
+        1. CA1
+        1. CA2/CA3
+        1. CA4/DG
+        1. subiculum
+        1. stratum
+        1. Mammilary bodies
+    1. White Matter
+        1. Alveus
+        1. Fimbria
+        1. Fornix
+
+---
+
+# Hippocampal anatomical hierarchy
+
+Some code to generate a data representation of this tree:
+
+```{r}
+library(data.tree)
+hpc <- Node$new("HPC")
+gm <- hpc$AddChild("GM")
+ca1 <- gm$AddChild("CA1")
+lca1 <- ca1$AddChild("left CA1")
+lca1$volumes <- adni$L_CA1
+rca1 <- ca1$AddChild("right CA1")
+rca1$volumes <- adni$R_CA1
+ca23 <- gm$AddChild("CA2CA3")
+lca23 <- ca23$AddChild("left CA2CA3")
+lca23$volumes <- adni$L_CA2CA3
+rca23 <- ca23$AddChild("right CA2CA3")
+rca23$volumes <- adni$R_CA2CA3
+ca4 <- gm$AddChild("CA4DG")
+lca4 <- ca4$AddChild("left CA4DG")
+lca4$volumes <- adni$L_CA4DG
+rca4 <- ca4$AddChild("right CA4DG")
+rca4$volumes <- adni$R_CA4DG
+subiculum <- gm$AddChild("subiculum")
+lsubiculum <- subiculum$AddChild("left subiculum")
+lsubiculum$volumes <- adni$L_subiculum
+rsubiculum <- subiculum$AddChild("right subiculum")
+rsubiculum$volumes <- adni$R_subiculum
+stratum <- gm$AddChild("stratum")
+lstratum <- stratum$AddChild("left stratum")
+lstratum$volumes <- adni$L_stratum
+rstratum <- stratum$AddChild("right stratum")
+rstratum$volumes <- adni$R_stratum
+mam <- gm$AddChild("Mammillary bodies")
+lmam <- mam$AddChild("left Mammillary bodies")
+lmam$volumes <- adni$L_Mam
+rmam <- mam$AddChild("right Mammillary bodies")
+rmam$volumes <- adni$R_Mam
+wm <- hpc$AddChild("WM")
+alveus <- wm$AddChild("Alveus")
+lalveus <- alveus$AddChild("left Alveus")
+lalveus$volumes <- adni$L_Alv
+ralveus <- alveus$AddChild("right Alveus")
+ralveus$volumes <- adni$R_Alv
+fimbria <- wm$AddChild("Fimbria")
+lfimbria <- fimbria$AddChild("left Fimbria")
+lfimbria$volumes <- adni$L_Fimb
+rfimbria <- fimbria$AddChild("right Fimbria")
+rfimbria$volumes <- adni$R_Fimb
+fornix <- wm$AddChild("Fornix")
+lfornix <- fornix$AddChild("left Fornix")
+lfornix$volumes <- adni$L_Fornix
+rfornix <- fornix$AddChild("right Fornix")
+rfornix$volumes <- adni$R_Fornix
+```
+
+---
+
+# Hippocampal anatomical hierarchy
+
+```{r}
+hpc
+```
+
+---
+# Aggregate up the tree
+
+We have all of the structure volumes, but we need to add them up to
+get the volume of the interior nodes.
+
+```{r}
+hpc$Do(function(x){
+  x$volumes <- Aggregate(x, "volumes", rowSums)
+}, traversal="post-order", filterFun=isNotLeaf)
+
+hpc$Do(function(x) {
+  x$meanVolume <- mean(x$volumes)
+})
+```
+
+---
+# What does it look like?
+
+```{r, echo = FALSE, eval = FALSE}
+library(htmlwidgets)
+library(networkD3)
+nd3 <- igraph_to_networkD3(data.tree::as.igraph.Node(hpc))
+nd3$links$thickness <- hpc$Get("meanVolume")[nd3$links$target + 1]
+
+# I screenshot this manually because networkD3 interacts strangely with xaringan (remark.js)
+onRender(sankeyNetwork(Links = nd3$links, Nodes = nd3$nodes, Source = 'source', Target = 'target', 
+              NodeID = 'name', Value = 'thickness', height = 600
+            , width = 900, fontSize = 18, margin = 0)
+         , 'function(el, d, js){ el.onmouseenter = function(e){ e.target.firstChild.setAttribute("viewBox", ""); }; }')
+```
+
+![](sankey.png)
+
+---
+
+# Tree graph
+
+```{r, fig.height=4}
+library(treemap)
+ToDataFrameTable(hpc, "pathString", "meanVolume", "name") %>% 
+  mutate(path=strsplit(pathString, "/"), 
+         struct=map_chr(path, ~ .x[3]), 
+         tissue=map_chr(path, ~ .x[2])) %>% 
+  select(struct, tissue, name, meanVolume) %>% 
+  treemap(index=c("tissue", "struct"), vSize="meanVolume")
+```
+
+---
+
+# What scale of analysis do I choose?
+
+- What scale you choose to analyze can have a large impact
+  on your results. 
+- Should I use all leaf nodes? What if some are small/noisy?
+- Should I merge left and right hemispheres?
+- Do I care about a whole brain effect?
+- One way to approach this is to analyze at all scales.
+
+---
+# Statistics on the tree
+
+Here's how to fit linear models at each scale
+
+```{r}
+hpc$Do(function(x){
+  adni$volumes <- x$volumes
+  x$stats <- 
+    lm(volumes ~ age+sex+dx, adni) %>%
+    tidy() %>%
+    filter(startsWith(term, "dx")) %>%
+    select(term, estimate, statistic, p.value)
+})
+```
+---
+
+# Statistics on the tree
+
+```{r}
+print(hpc, AD=function(x) 
+  x$stats %>% filter(term=="dxAD") %>% select(statistic) )
+```
+
+---
+
+# Statistics on the tree
+
+```{r}
+print(hpc, AD=function(x) 
+  x$stats %>% filter(term=="dxAD") %>% 
+    select(statistic),
+  filterFun=isNotLeaf )
+```
+
+---
+
+# Statistics on the tree
+
+```{r, fig.height=3}
+hpc$Do(function(x){
+  x$ad <- -log10(x$stats %>% filter(term=="dxAD") %>% 
+                   select(p.value))
+})
+
+ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %>% 
+  mutate(path=strsplit(pathString, "/"), 
+         struct=map_chr(path, ~ .x[3]), 
+         tissue=map_chr(path, ~ .x[2])) %>% 
+  select(struct, tissue, name, meanVolume, ad) %>% 
+  treemap(index=c("tissue", "struct"), vSize="meanVolume", 
+    vColor="ad", type="value")
+```
+---
+
+# Looking at many structures 
 
 ---
 # Data preparation
@@ -980,8 +1073,8 @@ Prune(hpcSym, isNotLeaf)
 data <- hpcSym$Get("normVolumes", filterFun=isLeaf)
 colnames(data) <- hpcSym$Get("name", filterFun = isLeaf)
 adniLongNorm <- adni %>% 
-  mutate(AGE=AGE/10) %>% 
-  select(PTID:DX_bl) %>% 
+  mutate(age=age/10) %>% 
+  select(id:dx) %>% 
   cbind(data) %>% 
   # sample_n(100) %>% # to make it not last an ice-age
   gather(structure, volume, CA1:Fornix) 
@@ -992,8 +1085,8 @@ adniLongNorm <- adni %>%
 
 ```{r, eval=FALSE}
 flathierarchy <- stan_lmer(
-  volume ~ AGE+PTGENDER+DX_bl + (1|PTID) + 
-           (AGE+PTGENDER+DX_bl|structure), 
+  volume ~ age+sex+dx + (1|id) + 
+           (age+sex+dx|structure), 
   adniLongNorm , chains=3, cores=3, adapt_delta = 0.99)
 ```
 
@@ -1007,16 +1100,16 @@ flathierarchy <- readRDS("flathierarchy.Rds")
 # The model
 ```{r, eval=FALSE}
 flathierarchy <- stan_lmer(
-  volume ~ AGE+PTGENDER+DX_bl + (1|PTID) +
-           (AGE+PTGENDER+DX_bl|structure), 
+  volume ~ age+sex+dx + (1|id) +
+           (age+sex+dx|structure), 
   adniLongNorm , chains=3, cores=3, adapt_delta = 0.99)
 ```
 
 What is this model doing?
 
-* volume ~ AGE + PTGENDER + DX_bl -> the same model we saw before
-* (1|PTID) -> allow for variation across individuals; i.e. those with a larger CA1 are also likely to have a larger DG
-* (AGE+PTGENDER+DX_bl|structure) -> repeat of the model, but now grouped by structure.
+* volume ~ age + sex + dx -> the same model we saw before
+* (1|id) -> allow for variation across individuals; i.e. those with a larger CA1 are also likely to have a larger DG
+* (age+sex+dx|structure) -> repeat of the model, but now grouped by structure.
 
 --
 
@@ -1064,8 +1157,8 @@ This is our model from before:
 
 $y = \alpha + X\beta + Zb + \epsilon$
 
-* where $X$ is the matrix of predictors for the main effect, AGE+PTGENDER+DX_bl in our model.
-* and where $Z$ is the matrix that encodes deviation in the predictors across groups, or structures in our case, which we specified as (AGE+PTGENDER+DX_bl|structure) and (1|PTID).
+* where $X$ is the matrix of predictors for the main effect, age+sex+dx in our model.
+* and where $Z$ is the matrix that encodes deviation in the predictors across groups, or structures in our case, which we specified as (age+sex+dx|structure) and (1|id).
 
 --
 
@@ -1139,14 +1232,14 @@ mcmc_intervals(flathierarchym[,1:7])
 # Effect across structures
 ```{r, fig.height=6, fig.width=10}
 mcmc_intervals(flathierarchym, 
-  pars="DX_blAD", regex_pars = 'DX_blAD structure')
+  pars="dxAD", regex_pars = 'dxAD structure')
 ```
 
 ---
 # Effect across structures
 ```{r, fig.height=6, fig.width=10}
 mcmc_areas_ridges(flathierarchym, 
-  pars="DX_blAD", regex_pars = 'DX_blAD structure')
+  pars="dxAD", regex_pars = 'dxAD structure')
 ```
 
 ---
@@ -1154,8 +1247,8 @@ mcmc_areas_ridges(flathierarchym,
 
 ```{r, fig.height=5.5, fig.width=10}
 vars <- colnames(flathierarchym)
-ADsamples <- flathierarchym[,grep('DX_blAD structure', vars)]
-mcmc_areas_ridges(ADsamples + flathierarchym[,"DX_blAD"])
+ADsamples <- flathierarchym[,grep('dxAD structure', vars)]
+mcmc_areas_ridges(ADsamples + flathierarchym[,"dxAD"])
 ```
 
 ---
@@ -1164,15 +1257,15 @@ mcmc_areas_ridges(ADsamples + flathierarchym[,"DX_blAD"])
 What is the probability that CA1 was more affected than CA2/CA3 in AD?
 
 ```{r}
-mean(flathierarchym[,'b[DX_blAD structure:CA1]'] < 
-       flathierarchym[,'b[DX_blAD structure:CA2CA3]'])
+mean(flathierarchym[,'b[dxAD structure:CA1]'] < 
+       flathierarchym[,'b[dxAD structure:CA2CA3]'])
 ```
 
 Not very likely
 
 ```{r}
-quantile(flathierarchym[,'b[DX_blAD structure:CA1]'] - 
-       flathierarchym[,'b[DX_blAD structure:CA2CA3]'])
+quantile(flathierarchym[,'b[dxAD structure:CA1]'] - 
+       flathierarchym[,'b[dxAD structure:CA2CA3]'])
 ```
 
 ---
@@ -1180,22 +1273,22 @@ quantile(flathierarchym[,'b[DX_blAD structure:CA1]'] -
 What is the probability that the subiculum was more affected than CA1 in AD?
 
 ```{r}
-mean(flathierarchym[,'b[DX_blAD structure:subiculum]'] < 
-       flathierarchym[,'b[DX_blAD structure:CA1]'])
+mean(flathierarchym[,'b[dxAD structure:subiculum]'] < 
+       flathierarchym[,'b[dxAD structure:CA1]'])
 ```
 
 Almost certainly
 
 ```{r}
-quantile(flathierarchym[,'b[DX_blAD structure:subiculum]'] - 
-       flathierarchym[,'b[DX_blAD structure:CA1]'])
+quantile(flathierarchym[,'b[dxAD structure:subiculum]'] - 
+       flathierarchym[,'b[dxAD structure:CA1]'])
 ```
 
 ---
 # All pairs of probabilities
 
 ```{r}
-ADvars <- grep("DX_blAD structure", vars)
+ADvars <- grep("dxAD structure", vars)
 probcomps <- matrix(nrow=length(ADvars), ncol=length(ADvars))
 for (i in 1:length(ADvars)) {
   for (j in 1:length(ADvars)) {
@@ -1229,9 +1322,9 @@ First, compute the least squares estimates
 ```{r}
 lmEstimates <- adniLongNorm %>%
   split(.$structure) %>%
-  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
+  map(~lm(volume ~ age+sex+dx, .)) %>%
   map_dfr(tidy, .id='roi') %>%
-  filter(term == "DX_blAD") %>%
+  filter(term == "dxAD") %>%
   select(roi, estimate)
 ```
 
@@ -1242,7 +1335,7 @@ lmEstimates <- adniLongNorm %>%
 Next, compute the medians from the Hierarchical Bayesian model
 
 ```{r}
-sweptADsamples <- flathierarchym[,ADvars] + flathierarchym[,"DX_blAD"]
+sweptADsamples <- flathierarchym[,ADvars] + flathierarchym[,"dxAD"]
 lmAndBayes <- sweptADsamples %>% 
   as_data_frame %>% 
   gather(term, value) %>% 
@@ -1256,7 +1349,7 @@ lmAndBayes <- sweptADsamples %>%
 
 ---
 
-# Estimating Shrinkage
+# Estimating shrinkage
 
 ```{r}
 lmAndBayes %>% mutate(diff=abs(median - estimate))
@@ -1264,7 +1357,7 @@ lmAndBayes %>% mutate(diff=abs(median - estimate))
 
 ---
 
-# Estimating Shrinkage
+# Estimating shrinkage
 
 ```{r, fig.height=4}
 library(ggrepel)
@@ -1299,7 +1392,7 @@ bOut <- structswmain %>%
 
 lOut <- adniLongNorm %>%
   split(.$structure) %>%
-  map(~lm(volume ~ AGE+PTGENDER+DX_bl, .)) %>%
+  map(~lm(volume ~ age+sex+dx, .)) %>%
   map_dfr(tidy, .id='roi') %>%
   select(estimate, roi, term)
 
@@ -1355,8 +1448,8 @@ mcmc_intervals(structswmain, regex_pars="LMCI")
 ```{r}
 hpcSym$Do(function(x){
   adni$volume <- x$normVolumes
-  x$stats <- tidy(lm(volume ~ AGE+PTGENDER+DX_bl, adni))
-  x$LMCI <- x$stats %>% filter(term=="DX_blLMCI") %>% select(p.value)
+  x$stats <- tidy(lm(volume ~ age+sex+dx, adni))
+  x$LMCI <- x$stats %>% filter(term=="dxLMCI") %>% select(p.value)
 })
 round(p.adjust(
   hpcSym$Get("LMCI", filterFun = isLeaf), 'fdr'), 
@@ -1380,7 +1473,7 @@ LMCIprobs <- structswmain %>%
   mutate(roi = sub('.+structure:(.+)\\]', '\\1', mterm),
          roi = sub('_', ' ', roi),
          term = sub('b\\[(.+) str.+', '\\1', mterm)) %>%
-  filter(term=="DX_blLMCI") %>%
+  filter(term=="dxLMCI") %>%
   select(roi, median, prob)
 
 LMCIq <- hpcSym$Get("LMCI", filterFun = isLeaf) %>% 
@@ -1429,8 +1522,8 @@ tissueTable <- ToDataFrameTable(hpcSym, "name", "tissue")
 # A more complex hierarchy
 
 ```{r}
-adniLongNorm <- adni %>% mutate(AGE=AGE/10) %>% 
-  select(PTID:DX_bl) %>% 
+adniLongNorm <- adni %>% mutate(age=age/10) %>% 
+  select(id:dx) %>% 
   cbind(data) %>% 
   #sample_n(50) %>%
   gather(structure, volume, CA1:Fornix) %>%
@@ -1447,8 +1540,8 @@ Allow for structure within tissue
 ```{r, eval=F}
 # this takes a long time unless a small subset of the data is used
 twolevelhierarchy <- 
-  stan_lmer(volume ~ AGE+PTGENDER+DX_bl + (1|PTID) + 
-              (AGE+PTGENDER+DX_bl|tissue/structure), 
+  stan_lmer(volume ~ age+sex+dx + (1|id) + 
+              (age+sex+dx|tissue/structure), 
             adniLongNorm , chains=3, cores=3, adapt_delta = 0.99)
 ```
 
@@ -1464,7 +1557,7 @@ twolevelhierarchym <- as.matrix(twolevelhierarchy)
 Remember that you are encoding the difference from the level one up
 
 ```{r, fig.height=4}
-mcmc_intervals(twolevelhierarchym, regex_pars="b\\[DX_blAD", pars="DX_blAD")
+mcmc_intervals(twolevelhierarchym, regex_pars="b\\[dxAD", pars="dxAD")
 ```
 
 --
@@ -1489,9 +1582,9 @@ twolevelstructs <- twolevelhierarchym[,structvars] +
 ylabels <- tissueTable %>% arrange(name) %>% select(name)
 
 grid.arrange(
-  mcmc_intervals(twolevelstructs, regex_pars = "DX_blLMCI") + 
+  mcmc_intervals(twolevelstructs, regex_pars = "dxLMCI") + 
     ggtitle("Two level") + scale_y_discrete(labels=ylabels$name),
-  mcmc_intervals(structswmain, regex_pars = "DX_blLMCI") +
+  mcmc_intervals(structswmain, regex_pars = "dxLMCI") +
     ggtitle("Flat") + scale_y_discrete(labels=ylabels$name),
   ncol=2)
 ```
@@ -1507,7 +1600,7 @@ grid.arrange(
 
 ---
 
-#Linux install:
+# Linux install:
 
 1. Get the minc-toolkit-v2 (https://bic-mni.github.io/)
 1. Source the configure script `source /opt/minc/1.9.16/minc-toolkit-config.sh` or where-ever your minc-toolkit version was installed
@@ -1519,8 +1612,11 @@ grid.arrange(
 devtools::install_github("Mouse-Imaging-Centre/RMINC", 
   dependencies = c("Depends", "Imports", "LinkingTo",
                    "Suggests","Enhances"))
+```
 
-#Mac Install
+---
+
+# Mac Install
 
 Mac install is very similar, however fortran libraries are necessary, and so you will likely need the
 package manager [brew](https://brew.sh/). From there you will need to run `brew install gcc`
