@@ -113,7 +113,7 @@ singularity exec \
   --bind /scinet/course/ss2019/3/8_bayesianmri/rstudio_auth.sh:/usr/lib/rstudio-server/bin/rstudio_auth.sh \
   --bind $SCRATCH/tmp:/tmp \
   --bind $SCRATCH:$SCRATCH \
-  /scinet/course/ss2019/3/8_bayesianmri/RMINC-rserver-scinet-2019-06-26.imgXS \
+  /scinet/course/ss2019/3/8_bayesianmri/RMINC-rserver-scinet-2019-06-26.img \
   rserver \
   --auth-none 0 \
   --auth-pam-helper-path rstudio_auth.sh \
@@ -425,10 +425,39 @@ $\epsilon$ is normally distributed with some unknown variance $\sigma$
 
 ---
 
+# Why now?
+
+- Bayesian statistics has been around since Laplace. Why is it becoming popular now?
+
+---
+
+# Why now?
+
+- Bayesian statistics has been around since Laplace. Why is it becoming popular now?
+- **Probabilistic programming tools**
+- Computers got a lot faster, and very smart people wrote very useful software
+  for using bayesian stats.
+- One important tool is Stan.
+
+---
+
+# Stan
+
+- Stan is a modelling focused probabilistic programming language
+- It makes it easy to express complicated models in code
+- Has interfaces for R, python, and many more
+- Backed by a team of very talented statisticians and programmers
+- Uses automatic differentiation for very efficient sampling
+- We're going to use Stan via a wrapper library called rstanarm
+
+---
+
 # Simulate some data
 
+To see this software in action, we'll start with some simple simulated data.
+
 ```{r, fig.height = 4}
-set.seed(20180613)
+set.seed(20190627)
 age <- rnorm(100)
 brain_volume <- 3 * age + rnorm(100)
 ex <- data.frame(brain_volume = brain_volume, age = age)
@@ -454,6 +483,7 @@ summary(lmod)
 
 ```{r}
 suppressMessages(library(rstanarm))
+
 bl <- stan_glm(brain_volume ~ age, data = ex,
                 prior = normal(0, 5))
 ```
@@ -508,6 +538,29 @@ stan_glm(brain_volume ~ age, data = ex,
 
 ---
 
+# Did sampling work?
+
+- MCMC techniques need to be checked to ensure they're generating good samples
+
+```{r, fig.height = 3}
+mcmc_trace(as.matrix(bl, pars = c("age", "(Intercept)")))
+```
+
+---
+
+# Did sampling work?
+
+```{r}
+rhat(bl)
+neff_ratio(bl) * 4000
+```
+
+- We had excellent sampling efficiency!
+- We had no divergences (warning when we run the model)
+- See [bayesplot visual diagnosis](https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html) for more.
+
+---
+
 # The posterior revisited
 
 ```{r}
@@ -519,14 +572,25 @@ sum(bl_post[,"age"] > 3) / 4000
 
 ---
 
+# Extra exploration
+
+Maybe this will work, if not, try it at home!
+
+```{r, eval = FALSE}
+launch_shinystan(bl)
+```
+
+---
+
 # Summary so far
 
-- Weak priors don't change results much
 - Bayes' Theorem lets us integrate new observations with prior knowledge/beliefs
 - Bayesian statistics requires a prior distribution and a likelihood function and
   produces a posterior distribution
+- Weak priors don't change results much.
 - Posterior distributions are generally approximated with samples
 - Samples allow easy conversion between properties and probabilities
+- It's only a few commands to get started
 
 ---
 class: center
@@ -591,8 +655,9 @@ adni <-
          dx = DX_bl,
          sex = PTGENDER
          ) %>%
-  mutate(dx=fct_relevel(dx, 
-                           "CN", "SMC", "EMCI", "LMCI", "AD"))
+  mutate(dx=fct_relevel(
+           dx, "CN", "SMC", "EMCI", "LMCI", "AD"
+         ))
 ```
 
 ---
@@ -712,7 +777,7 @@ So we can see some signs that the posterior width is driven in part by sample si
 
 ---
 
-# Posterior Magic
+# Sample magic
 
 First let's extract the posterior
 
@@ -792,8 +857,9 @@ DT::datatable(rTable %>% remove_rownames() %>%
 
 # FWER
 
-- In family-wise error rate control, we try to limit the chance we will at least one
+- In family-wise error rate control, we try to limit the chance we will make at least one
   type I error.
+- Classic example, Bonferroni
 - Quite conservative, so in neuroimaging we tend to use False Discovery Rate control.
 
 ---
@@ -857,7 +923,7 @@ qTable
 - We can do this by adding another level of model, complete with more priors
 - This is called multilevel or hierarchical modelling
 - The brain can be viewed as hierarchically organized
-- Can we use all of this extra information somehow?
+- So we should capitalize on all this extra information!
 
 ---
 
@@ -865,18 +931,18 @@ qTable
 
 For the rest of the course we're going to focus on the following hierarchy
 
-1. Hippocampal Formation
-    1. Grey Matter
-        1. CA1
-        1. CA2/CA3
-        1. CA4/DG
-        1. subiculum
-        1. stratum
-        1. Mammilary bodies
-    1. White Matter
-        1. Alveus
-        1. Fimbria
-        1. Fornix
+- Hippocampal Formation
+    - Grey Matter
+        - CA1
+        - CA2/CA3
+        - CA4/DG
+        - subiculum
+        - stratum
+        - Mammilary bodies
+    - White Matter
+        - Alveus
+        - Fimbria
+        - Fornix
 
 ---
 
@@ -1044,8 +1110,9 @@ print(hpc, AD=function(x)
 
 ```{r, fig.height=3}
 hpc$Do(function(x){
-  x$ad <- -log10(x$stats %>% filter(term=="dxAD") %>% 
-                   select(p.value))
+  x$ad <- x$stats %>% filter(term=="dxAD") %>% select(statistic)
+    #-log10(x$stats %>% filter(term=="dxAD") %>% 
+    #               select(p.value))
 })
 
 ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %>% 
@@ -1107,9 +1174,9 @@ flathierarchy <- stan_lmer(
 
 What is this model doing?
 
-* volume ~ age + sex + dx -> the same model we saw before
-* (1|id) -> allow for variation across individuals; i.e. those with a larger CA1 are also likely to have a larger DG
-* (age+sex+dx|structure) -> repeat of the model, but now grouped by structure.
+* `volume ~ age + sex + dx`: the same model we saw before
+* `(1|id)`: allow for variation across individuals; i.e. those with a larger CA1 are also likely to have a larger DG
+* `(age+sex+dx|structure)`: repeat of the model, but now grouped by structure.
 
 --
 
@@ -1145,6 +1212,19 @@ Partial pooling, once more: the prior for each structure is the pooled estimated
 --
 
 And since all structures share information, you need not control for multiple comparisons. Shrinkage replaces widening of confidence intervals.
+
+---
+
+# Wait, I've seen this before
+
+`volume ~ age+sex+dx + (1|id) + (age+sex+dx|structure)`
+
+- If you're thinking this looks familiar, you're probably right.
+- This *is* the same syntax as mixed-effects models fit with lme4
+- Conveniently, this *is* a linear mixed-effects model
+- The difference between this and the model you would fit with lme4
+  is the priors, and the fact you get posterior distributions
+
 
 ---
 # Covariance priors
@@ -1222,6 +1302,22 @@ mcmc_trace(flathierarchym[,1:7])
 ```
 
 ---
+
+# Summary so far
+
+- We can incorporate information that structures are related by using a 
+  multi-level (mixed-effects like) model.
+- The model is the same in structure to frequentist models, differing only
+  in the priors we use.
+- We can fit these using `stan_lmer` anywhere we would use `lmer`
+- Diagnostics are looking good
+
+---
+
+# Now playing with the posterior distributions
+
+---
+
 # The main effects
 
 ```{r, fig.height=6, fig.width=10}
@@ -1589,6 +1685,15 @@ grid.arrange(
   ncol=2)
 ```
 ]
+
+---
+
+# Conclusion
+
+- I hope you learned a little bit about how to analyze neuroimaging data with R
+- I hope you appreciate that more complicated models with the right priors help
+  us capitalize on rich hierarchical brain data
+- I hope you learned some useful R tricks along the way
 
 ---
 
