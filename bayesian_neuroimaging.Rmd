@@ -30,7 +30,7 @@ output:
   margin-bottom: -11.6px;
   margin-right: 10px;
   color: #FFFFFF; /* white */
-  opacity: 1; /* default: 0.5 */
+  opacity: 0; /* deConverging function, structure and behavioural features of emotion regulation in very preterm childrenfault: 0.5 */
 }
 </style>
 
@@ -46,34 +46,36 @@ opts_chunk$set(dpi=200, fig.height=5.5, fig.width=10)
 
 # Outline
 
-1. Quick overview of algorithms and datasets used today
-1. Anatomy and hierarchies
-1. Massively univariate classical statistics
-1. Meet Reverend Thomas
-1. A simple model
-1. A more involved model
-1. Diagnostics
-1. A complex example (if we have time)
-1. ... 
-1. Profit?
+1. Setup rstudio
+1. Remind you about classical statistics
+1. Introduce you to Bayesian statistics
+1. Compare Bayesian and Frequentist linear model on simulated data
+1. Introduce some real neuroimaging data
+1. Demonstrate univariate analyses
+1. Demonstrate massively-univariate analyses
+1. Introduce hierarchical modelling
+1. Work through one (two if we're lucky) example
 
 ---
 
 # Following Along
 
-- To follow along with today's session you will need to either:
-- run R with `c("knitr", "tidyverse", "forcats", "ggplot2", "broom", "data.tree", "treemap", "rstanarm", "bayesplot", "pheatmap", "ggrepel")` on your laptop
-- use R from our singularity container
-
+- To follow along we're going to use a singularity container on the scinet teach cluster
+  to run RStudio server. This gives you full featured RStudio in your browser.
+- You can in theory run on your own laptop, but you will need to install a lot
+  of packages. Not recommended.
+  
 ---
 
-# Get these slides and code
+# Get connected
 
-- From a terminal run:
+- These instructions assume you will be running on the scinet teach cluster
 
 ```{r, engine = "bash", eval = FALSE}
-git clone https://github.com/Mouse-Imaging-Centre/Scinet-SS-bayesian-neuroimaging-R
-cd Scinet-SS-bayesian-neuroimaging-R
+ssh -L8787:localhost:<your-port> <you>@teach.scinet.utoronto.ca
+
+git clone https://github.com/cfhammill/2019-06-27_scinet-bayesian-neuroimaging
+cd 2019-06-27_scinet-bayesian-neuroimaging
 
 ## cp in some extra files <use scp if you're working on your own laptop>
 cp /scinet/course/ss2019/3/8_bayesianmri/ADNI2_BL_MAGeT_Hippocampus_subfields.csv .
@@ -84,10 +86,9 @@ cp /scinet/course/ss2019/3/8_bayesianmri/twolevelhierarchy.Rds .
 
 # Singularity set up
 
-- First ssh to niagara and set your port to forward
+- To run the rstudio server you will need to set up a reverse tunnel
 
 ```{r, engine = "bash", eval = FALSE}
-ssh -L8787:localhost:<your-port> <you>@teach.scinet.utoronto.ca
 debugjob
 ssh -f -N -T -R <your-port>:localhost:<your-port> <you>@teach.scinet.utoronto.ca
 ```

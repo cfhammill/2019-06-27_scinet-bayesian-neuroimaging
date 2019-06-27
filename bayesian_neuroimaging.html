@@ -46,7 +46,7 @@ class: center, middle, inverse, title-slide
   margin-bottom: -11.6px;
   margin-right: 10px;
   color: #FFFFFF; /* white */
-  opacity: 1; /* default: 0.5 */
+  opacity: 0; /* deConverging function, structure and behavioural features of emotion regulation in very preterm childrenfault: 0.5 */
 }
 &lt;/style&gt;
 
@@ -56,35 +56,37 @@ class: center, middle, inverse, title-slide
 
 # Outline
 
-1. Quick overview of algorithms and datasets used today
-1. Anatomy and hierarchies
-1. Massively univariate classical statistics
-1. Meet Reverend Thomas
-1. A simple model
-1. A more involved model
-1. Diagnostics
-1. A complex example (if we have time)
-1. ... 
-1. Profit?
+1. Setup rstudio
+1. Remind you about classical statistics
+1. Introduce you to Bayesian statistics
+1. Compare Bayesian and Frequentist linear model on simulated data
+1. Introduce some real neuroimaging data
+1. Demonstrate univariate analyses
+1. Demonstrate massively-univariate analyses
+1. Introduce hierarchical modelling
+1. Work through one (two if we're lucky) example
 
 ---
 
 # Following Along
 
-- To follow along with today's session you will need to either:
-- run R with `c("knitr", "tidyverse", "forcats", "ggplot2", "broom", "data.tree", "treemap", "rstanarm", "bayesplot", "pheatmap", "ggrepel")` on your laptop
-- use R from our singularity container
-
+- To follow along we're going to use a singularity container on the scinet teach cluster
+  to run RStudio server. This gives you full featured RStudio in your browser.
+- You can in theory run on your own laptop, but you will need to install a lot
+  of packages. Not recommended.
+  
 ---
 
-# Get these slides and code
+# Get connected
 
-- From a terminal run:
+- These instructions assume you will be running on the scinet teach cluster
 
 
 ```bash
-git clone https://github.com/Mouse-Imaging-Centre/Scinet-SS-bayesian-neuroimaging-R
-cd Scinet-SS-bayesian-neuroimaging-R
+ssh -L8787:localhost:&lt;your-port&gt; &lt;you&gt;@teach.scinet.utoronto.ca
+
+git clone https://github.com/cfhammill/2019-06-27_scinet-bayesian-neuroimaging
+cd 2019-06-27_scinet-bayesian-neuroimaging
 
 ## cp in some extra files &lt;use scp if you're working on your own laptop&gt;
 cp /scinet/course/ss2019/3/8_bayesianmri/ADNI2_BL_MAGeT_Hippocampus_subfields.csv .
@@ -95,11 +97,10 @@ cp /scinet/course/ss2019/3/8_bayesianmri/twolevelhierarchy.Rds .
 
 # Singularity set up
 
-- First ssh to niagara and set your port to forward
+- To run the rstudio server you will need to set up a reverse tunnel
 
 
 ```bash
-ssh -L8787:localhost:&lt;your-port&gt; &lt;you&gt;@teach.scinet.utoronto.ca
 debugjob
 ssh -f -N -T -R &lt;your-port&gt;:localhost:&lt;your-port&gt; &lt;you&gt;@teach.scinet.utoronto.ca
 ```
@@ -532,103 +533,104 @@ bl &lt;- stan_glm(brain_volume ~ age, data = ex,
 ```
 ## 
 ## SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-## 
-## Gradient evaluation took 2.7e-05 seconds
-## 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
-## Adjust your expectations accordingly!
-## 
-## 
-## Iteration:    1 / 2000 [  0%]  (Warmup)
-## Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Iteration: 2000 / 2000 [100%]  (Sampling)
-## 
-##  Elapsed Time: 0.074791 seconds (Warm-up)
-##                0.057332 seconds (Sampling)
-##                0.132123 seconds (Total)
-## 
+## Chain 1: 
+## Chain 1: Gradient evaluation took 4.3e-05 seconds
+## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.43 seconds.
+## Chain 1: Adjust your expectations accordingly!
+## Chain 1: 
+## Chain 1: 
+## Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 1: 
+## Chain 1:  Elapsed Time: 0.093205 seconds (Warm-up)
+## Chain 1:                0.065219 seconds (Sampling)
+## Chain 1:                0.158424 seconds (Total)
+## Chain 1: 
 ## 
 ## SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
-## 
-## Gradient evaluation took 1.1e-05 seconds
-## 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
-## Adjust your expectations accordingly!
-## 
-## 
-## Iteration:    1 / 2000 [  0%]  (Warmup)
-## Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Iteration: 2000 / 2000 [100%]  (Sampling)
-## 
-##  Elapsed Time: 0.071494 seconds (Warm-up)
-##                0.055998 seconds (Sampling)
-##                0.127492 seconds (Total)
-## 
+## Chain 2: 
+## Chain 2: Gradient evaluation took 1.6e-05 seconds
+## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
+## Chain 2: Adjust your expectations accordingly!
+## Chain 2: 
+## Chain 2: 
+## Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 2: 
+## Chain 2:  Elapsed Time: 0.076775 seconds (Warm-up)
+## Chain 2:                0.061724 seconds (Sampling)
+## Chain 2:                0.138499 seconds (Total)
+## Chain 2: 
 ## 
 ## SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
-## 
-## Gradient evaluation took 1.2e-05 seconds
-## 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
-## Adjust your expectations accordingly!
-## 
-## 
-## Iteration:    1 / 2000 [  0%]  (Warmup)
-## Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Iteration: 2000 / 2000 [100%]  (Sampling)
-## 
-##  Elapsed Time: 0.071322 seconds (Warm-up)
-##                0.056655 seconds (Sampling)
-##                0.127977 seconds (Total)
-## 
+## Chain 3: 
+## Chain 3: Gradient evaluation took 1.6e-05 seconds
+## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
+## Chain 3: Adjust your expectations accordingly!
+## Chain 3: 
+## Chain 3: 
+## Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 3: 
+## Chain 3:  Elapsed Time: 0.081722 seconds (Warm-up)
+## Chain 3:                0.064142 seconds (Sampling)
+## Chain 3:                0.145864 seconds (Total)
+## Chain 3: 
 ## 
 ## SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
-## 
-## Gradient evaluation took 1.2e-05 seconds
-## 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
-## Adjust your expectations accordingly!
-## 
-## 
-## Iteration:    1 / 2000 [  0%]  (Warmup)
-## Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Iteration: 2000 / 2000 [100%]  (Sampling)
-## 
-##  Elapsed Time: 0.069562 seconds (Warm-up)
-##                0.055722 seconds (Sampling)
-##                0.125284 seconds (Total)
+## Chain 4: 
+## Chain 4: Gradient evaluation took 1.5e-05 seconds
+## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+## Chain 4: Adjust your expectations accordingly!
+## Chain 4: 
+## Chain 4: 
+## Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 4: 
+## Chain 4:  Elapsed Time: 0.080286 seconds (Warm-up)
+## Chain 4:                0.062931 seconds (Sampling)
+## Chain 4:                0.143217 seconds (Total)
+## Chain 4:
 ```
 
 ---
@@ -650,14 +652,18 @@ bl
 ##             Median MAD_SD
 ## (Intercept) -0.1    0.1  
 ## age          2.9    0.1  
-## sigma        1.0    0.1  
+## 
+## Auxiliary parameter(s):
+##       Median MAD_SD
+## sigma 1.0    0.1   
 ## 
 ## Sample avg. posterior predictive distribution of y:
 ##          Median MAD_SD
 ## mean_PPD -0.1    0.1  
 ## 
 ## ------
-## For info on the priors used see help('prior_summary.stanreg').
+## * For help interpreting the printed output see ?print.stanreg
+## * For info on the priors used see ?prior_summary.stanreg
 ```
 
 ---
@@ -736,6 +742,11 @@ mcmc_trace(as.matrix(bl, pars = c("age", "(Intercept)")))
 
 ![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
 
+---
+
+# Did sampling work?
+
+
 ```r
 rhat(bl)
 ```
@@ -751,8 +762,12 @@ neff_ratio(bl) * 4000
 
 ```
 ## (Intercept)         age       sigma 
-##        3360        3750        3669
+##        3341        3847        3742
 ```
+
+- We had excellent sampling efficiency!
+- We had no divergences (warning when we run the model)
+- See [bayesplot visual diagnosis](https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html) for more.
 
 ---
 
@@ -779,14 +794,26 @@ sum(bl_post[,"age"] &gt; 3) / 4000
 
 ---
 
+# Extra exploration
+
+Maybe this will work, if not, try it at home!
+
+
+```r
+launch_shinystan(bl)
+```
+
+---
+
 # Summary so far
 
 - Bayes' Theorem lets us integrate new observations with prior knowledge/beliefs
 - Bayesian statistics requires a prior distribution and a likelihood function and
   produces a posterior distribution
-- Weak priors don't change results much  
+- Weak priors don't change results much.
 - Posterior distributions are generally approximated with samples
 - Samples allow easy conversion between properties and probabilities
+- It's only a few commands to get started
 
 ---
 class: center
@@ -817,7 +844,7 @@ Chakravarty MM, Steadman P, van Eede MC, Calcott RD, Gu V, Shaw P, Raznahan A, C
 # MAGeT - the atlas
 
 
-&lt;img src="hippoatlas.png" height="400px" /&gt;
+&lt;img src="hippoatlas.png" width="576" height="400px" /&gt;
 
 .small[
 Pipitone J, Park MTM, Winterburn J, Lett TA, Lerch JP, Pruessner JC, Lepage M, Voineskos AN, Chakravarty MM, Alzheimer’s Disease Neuroimaging Initiative. Multi-atlas segmentation of the whole hippocampus and subfields using multiple automatically generated templates. Neuroimage. 2014 Nov 1;101:494–512.
@@ -861,8 +888,9 @@ adni &lt;-
          dx = DX_bl,
          sex = PTGENDER
          ) %&gt;%
-  mutate(dx=fct_relevel(dx, 
-                           "CN", "SMC", "EMCI", "LMCI", "AD"))
+  mutate(dx=fct_relevel(
+           dx, "CN", "SMC", "EMCI", "LMCI", "AD"
+         ))
 ```
 
 ---
@@ -900,7 +928,7 @@ library(ggplot2)
 ggplot(adniLong) + aes(x=dx, y=age) + geom_boxplot()
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-19-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-21-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -913,7 +941,7 @@ adniLong %&gt;% group_by(id) %&gt;%
   ggplot() + aes(dx, HPC, colour=sex) + geom_boxplot()
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-20-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-22-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -1022,14 +1050,18 @@ ca1_mod
 ## dxEMCI  0.1    0.1  
 ## dxLMCI -0.2    0.1  
 ## dxAD   -0.2    0.1  
-## sigma   1.0    0.0  
+## 
+## Auxiliary parameter(s):
+##       Median MAD_SD
+## sigma 1.0    0.0   
 ## 
 ## Sample avg. posterior predictive distribution of y:
 ##          Median MAD_SD
 ## mean_PPD 0.0    0.1   
 ## 
 ## ------
-## For info on the priors used see help('prior_summary.stanreg').
+## * For help interpreting the printed output see ?print.stanreg
+## * For info on the priors used see ?prior_summary.stanreg
 ```
 
 ---
@@ -1041,7 +1073,7 @@ So we see that the effect of each diagnosis has on CA1 volume. Let's visualize t
 mcmc_areas(as.matrix(ca1_mod), regex_pars = "dx.*")
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-24-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-26-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -1060,7 +1092,7 @@ So we can see some signs that the posterior width is driven in part by sample si
 
 ---
 
-# Posterior Magic
+# Sample magic
 
 First let's extract the posterior
 
@@ -1091,7 +1123,7 @@ So we're pretty sure about this.
 mcmc_areas(ca1_post[,"dxCN", drop = FALSE] - ca1_post[,"dxAD"])
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-28-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-30-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -1180,8 +1212,8 @@ DT::datatable(rTable %&gt;% remove_rownames() %&gt;%
   column_to_rownames("roi") %&gt;% round(2), options=list(pageLength=7))
 ```
 
-<div id="htmlwidget-dadf4db2507f102c3732" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-dadf4db2507f102c3732">{"x":{"filter":"none","data":[["L_Alv","L_CA1","L_CA2CA3","L_CA4DG","L_Fimb","L_Fornix","L_Mam","L_stratum","L_subiculum","R_Alv","R_CA1","R_CA2CA3","R_CA4DG","R_Fimb","R_Fornix","R_Mam","R_stratum","R_subiculum"],[5.24,-4.08,-1.2,-7.07,-5.83,-0.18,-3.05,-7.57,-8.41,2.22,-2.32,-5.07,-4.27,-6.07,-1.16,-1.94,-8.16,-7.75],[2.07,-0.12,-0.25,-1.07,-1.37,1.12,0.42,-0.89,-1.35,1.34,0.2,-1.23,-0.41,-1.53,0.31,1.22,-1.72,-1.05],[3.33,-2.5,-0.98,-4.55,-5.18,-1.2,-0.91,-4.25,-4.7,1.96,-1.85,-2.52,-3.54,-4.32,-2.34,-0.87,-4.4,-4.53],[1.77,2.76,1.28,1.83,1.07,1.65,1.05,2.03,1.44,1.08,2.02,0.17,0.73,-0.2,1.14,1.22,0.97,1.73]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>dxAD<\/th>\n      <th>dxEMCI<\/th>\n      <th>dxLMCI<\/th>\n      <th>dxSMC<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":7,"columnDefs":[{"className":"dt-right","targets":[1,2,3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[7,10,25,50,100]}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-827b14d62a0a73b659f5" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-827b14d62a0a73b659f5">{"x":{"filter":"none","data":[["L_Alv","L_CA1","L_CA2CA3","L_CA4DG","L_Fimb","L_Fornix","L_Mam","L_stratum","L_subiculum","R_Alv","R_CA1","R_CA2CA3","R_CA4DG","R_Fimb","R_Fornix","R_Mam","R_stratum","R_subiculum"],[5.24,-4.08,-1.2,-7.07,-5.83,-0.18,-3.05,-7.57,-8.41,2.22,-2.32,-5.07,-4.27,-6.07,-1.16,-1.94,-8.16,-7.75],[2.07,-0.12,-0.25,-1.07,-1.37,1.12,0.42,-0.89,-1.35,1.34,0.2,-1.23,-0.41,-1.53,0.31,1.22,-1.72,-1.05],[3.33,-2.5,-0.98,-4.55,-5.18,-1.2,-0.91,-4.25,-4.7,1.96,-1.85,-2.52,-3.54,-4.32,-2.34,-0.87,-4.4,-4.53],[1.77,2.76,1.28,1.83,1.07,1.65,1.05,2.03,1.44,1.08,2.02,0.17,0.73,-0.2,1.14,1.22,0.97,1.73]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>dxAD<\/th>\n      <th>dxEMCI<\/th>\n      <th>dxLMCI<\/th>\n      <th>dxSMC<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":7,"columnDefs":[{"className":"dt-right","targets":[1,2,3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[7,10,25,50,100]}},"evals":[],"jsHooks":[]}</script>
 
 ---
 
@@ -1448,7 +1480,7 @@ ToDataFrameTable(hpc, "pathString", "meanVolume", "name") %&gt;%
   treemap(index=c("tissue", "struct"), vSize="meanVolume")
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-39-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-41-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -1570,7 +1602,7 @@ ToDataFrameTable(hpc, "pathString", "meanVolume", "name", "ad") %&gt;%
     vColor="ad", type="value")
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-43-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-45-1.png)&lt;!-- --&gt;
 ---
 
 # Looking at many structures 
@@ -4998,7 +5030,7 @@ mcmc_rhat_hist(rhat(flathierarchy))
 ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-49-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-51-1.png)&lt;!-- --&gt;
 
 ---
 # More diagnostics: trace plots
@@ -5014,9 +5046,25 @@ flathierarchym &lt;- as.matrix(flathierarchy)
 mcmc_trace(flathierarchym[,1:7])
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-51-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-53-1.png)&lt;!-- --&gt;
 
 ---
+
+# Summary so far
+
+- We can incorporate information that structures are related by using a 
+  multi-level (mixed-effects like) model.
+- The model is the same in structure to frequentist models, differing only
+  in the priors we use.
+- We can fit these using `stan_lmer` anywhere we would use `lmer`
+- Diagnostics are looking good
+
+---
+
+# Now playing with the posterior distributions
+
+---
+
 # The main effects
 
 
@@ -5024,7 +5072,7 @@ mcmc_trace(flathierarchym[,1:7])
 mcmc_intervals(flathierarchym[,1:7])
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-52-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-54-1.png)&lt;!-- --&gt;
 
 ---
 # Effect across structures
@@ -5034,7 +5082,7 @@ mcmc_intervals(flathierarchym,
   pars="dxAD", regex_pars = 'dxAD structure')
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-53-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-55-1.png)&lt;!-- --&gt;
 
 ---
 # Effect across structures
@@ -5044,7 +5092,7 @@ mcmc_areas_ridges(flathierarchym,
   pars="dxAD", regex_pars = 'dxAD structure')
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-54-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-56-1.png)&lt;!-- --&gt;
 
 ---
 # Summed effects
@@ -5056,7 +5104,7 @@ ADsamples &lt;- flathierarchym[,grep('dxAD structure', vars)]
 mcmc_areas_ridges(ADsamples + flathierarchym[,"dxAD"])
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-55-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-57-1.png)&lt;!-- --&gt;
 
 ---
 # Probability calculations
@@ -5145,7 +5193,7 @@ library(pheatmap)
 pheatmap(probcomps, display_numbers=T)
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-62-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-64-1.png)&lt;!-- --&gt;
 
 
 ---
@@ -5223,7 +5271,7 @@ ggplot(lmAndBayes) +
   ylab("Least squares")
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-66-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-68-1.png)&lt;!-- --&gt;
 
 ---
 # Estimating shrinkage across all terms
@@ -5271,7 +5319,7 @@ ggplot(blOut) +
   geom_abline(aes(intercept=0, slope=1))
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-68-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-70-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -5288,7 +5336,7 @@ ggplot(blOut) +
   facet_wrap(~term, scales="free")
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-69-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-71-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -5301,7 +5349,7 @@ Remember, nothing survived FDR comparisons ...
 mcmc_intervals(structswmain, regex_pars="EMCI")
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-70-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-72-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -5312,7 +5360,7 @@ mcmc_intervals(structswmain, regex_pars="EMCI")
 mcmc_intervals(structswmain, regex_pars="LMCI")
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-71-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-73-1.png)&lt;!-- --&gt;
 
 ---
 # A reminder about LMCI FDR
@@ -5489,7 +5537,7 @@ Remember that you are encoding the difference from the level one up
 mcmc_intervals(twolevelhierarchym, regex_pars="b\\[dxAD", pars="dxAD")
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-79-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-81-1.png)&lt;!-- --&gt;
 
 --
 
@@ -5528,8 +5576,17 @@ grid.arrange(
 ## will replace the existing scale.
 ```
 
-![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-80-1.png)&lt;!-- --&gt;
+![](bayesian_neuroimaging_files/figure-html/unnamed-chunk-82-1.png)&lt;!-- --&gt;
 ]
+
+---
+
+# Conclusion
+
+- I hope you learned a little bit about how to analyze neuroimaging data with R
+- I hope you appreciate that more complicated models with the right priors help
+  us capitalize on rich hierarchical brain data
+- I hope you learned some useful R tricks along the way
 
 ---
 
@@ -5598,12 +5655,23 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
   d.head.appendChild(s);
 })();</script>
 
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
   }
-});
+})();
 </script>
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
